@@ -30,5 +30,11 @@ frappe.ui.form.on('Production Plan', {
                 });
             }
         }, 500);
-    }
+        frm.page.remove_inner_button('Material Request', 'Create');
+
+        frm.add_custom_button(__('Material Request'), function () {
+            // Directly trigger without confirmation
+            frm.events.create_material_request(frm, 0);
+        }, __('Create'));
+    },
 });

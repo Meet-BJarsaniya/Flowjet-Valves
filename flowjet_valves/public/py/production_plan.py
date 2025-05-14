@@ -1,5 +1,16 @@
 import frappe
 from erpnext.manufacturing.doctype.production_plan.production_plan import get_sales_orders as original_get_sales_orders
+from frappe.utils import (
+	add_days,
+	ceil,
+	cint,
+	comma_and,
+	flt,
+	get_link_to_form,
+	getdate,
+	now_datetime,
+	nowdate,
+)
 
 @frappe.whitelist()
 def custom_get_sales_orders(**kwargs):
@@ -35,7 +46,7 @@ class CustomProductionPlan(BasePlan):
         self.show_list_created_message("Purchase Order", po_list)
 
         if not wo_list:
-            frappe.msgprint(_("No Work Orders were created"))
+            frappe.msgprint(_("Work Order(s) already exists in draft state for these items."))
 
     def make_work_order_for_finished_goods(self, wo_list, default_warehouses):
         items_data = self.get_production_items()
@@ -92,6 +103,92 @@ class CustomProductionPlan(BasePlan):
             if work_order:
                 wo_list.append(work_order)
 
+    @frappe.whitelist()
+    def make_material_request(self):
+        """Create Material Requests grouped by Sales Order and Material Request Type"""
+		
+        material_request_list = []
+        material_request_map = {}
+
+        for item in self.mr_items:
+            item_doc = frappe.get_cached_doc("Item", item.item_code)
+
+            material_request_type = item.material_request_type or item_doc.default_material_request_type
+
+			# key for Sales Order:Material Request Type:Customer
+            key = "{}:{}:{}".format(item.sales_order, material_request_type, item_doc.customer or "")
+            schedule_date = item.schedule_date or add_days(nowdate(), cint(item_doc.lead_time_days))
+
+            if key not in material_request_map:
+				# make a new MR for the combination
+                material_request_map[key] = frappe.new_doc("Material Request")
+                material_request = material_request_map[key]
+                material_request.update(
+					{
+						"transaction_date": nowdate(),
+						"status": "Draft",
+						"company": self.company,
+						"material_request_type": material_request_type,
+						"customer": item_doc.customer or "",
+					}
+				)
+                material_request_list.append(material_request)
+            else:
+                material_request = material_request_map[key]
+
+			# Check for existing Draft Material Request Item to avoid duplication
+            existing_mr_item = frappe.db.exists(
+				"Material Request Item",
+				{
+					"material_request_plan_item": item.name,
+					"docstatus": 0  # Draft
+				}
+			)
+
+            if existing_mr_item:
+                frappe.throw("Material Request already exists in draft state for these items.")
+                continue  # Skip this item if already exists in draft MR
+
+			# Else, add the item to the MR
+            material_request.append(
+				"items",
+				{
+					"item_code": item.item_code,
+					"from_warehouse": item.from_warehouse
+					if material_request_type == "Material Transfer"
+					else None,
+					"qty": item.quantity,
+					"schedule_date": schedule_date,
+					"warehouse": item.warehouse,
+					"sales_order": item.sales_order,
+					"production_plan": self.name,
+					"material_request_plan_item": item.name,
+					"project": frappe.db.get_value("Sales Order", item.sales_order, "project")
+					if item.sales_order
+					else None,
+					"custom_remarks": item.custom_remarks,  # Pass remarks if needed
+				},
+			)
+
+        for material_request in material_request_list:
+			# submit
+            material_request.flags.ignore_permissions = 1
+            material_request.run_method("set_missing_values")
+
+            material_request.save()
+            if self.get("submit_material_request"):
+                material_request.submit()
+
+        frappe.flags.mute_messages = False
+
+        if material_request_list:
+            material_request_list = [
+                get_link_to_form("Material Request", m.name) for m in material_request_list
+			]
+            msgprint(_("{0} created").format(comma_and(material_request_list)))
+        else:
+            msgprint(_("No material request created"))
+
 
 
 
@@ -99,7 +196,6 @@ class CustomProductionPlan(BasePlan):
 
 
 import json
-from frappe.utils import flt
 from collections import defaultdict
 from erpnext.manufacturing.doctype.production_plan.production_plan import get_warehouse_list
 from erpnext.manufacturing.doctype.production_plan.production_plan import get_exploded_items

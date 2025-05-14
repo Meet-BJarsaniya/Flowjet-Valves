@@ -183,7 +183,8 @@ doc_events = {
 
 override_whitelisted_methods = {
     # "erpnext.manufacturing.doctype.production_plan.production_plan.get_sales_orders": "flowjet_valves.public.py.production_plan.custom_get_sales_orders",
-    "erpnext.manufacturing.doctype.production_plan.production_plan.get_items_for_material_requests": "flowjet_valves.public.py.production_plan.get_items_for_material_requests"
+    "erpnext.manufacturing.doctype.production_plan.production_plan.get_items_for_material_requests": "flowjet_valves.public.py.production_plan.get_items_for_material_requests",
+    "erpnext.manufacturing.doctype.production_plan.production_plan.make_material_request": "flowjet_valves.public.py.production_plan.make_material_request"
 }
 
 #
