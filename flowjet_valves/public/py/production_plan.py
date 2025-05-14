@@ -1,6 +1,5 @@
 import frappe
 from erpnext.manufacturing.doctype.production_plan.production_plan import get_sales_orders as original_get_sales_orders
-# from erpnext.manufacturing.doctype.production_plan.production_plan import ProductionPlan as BasePlan
 
 @frappe.whitelist()
 def custom_get_sales_orders(**kwargs):
@@ -11,6 +10,10 @@ def custom_get_sales_orders(**kwargs):
         so["priority"] = sales_order_doc.priority or ""
 
     return sales_orders
+
+
+
+
 
 from erpnext.manufacturing.doctype.production_plan.production_plan import ProductionPlan as BasePlan
 from frappe import _, msgprint

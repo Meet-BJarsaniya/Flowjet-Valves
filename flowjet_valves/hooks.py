@@ -141,13 +141,16 @@ override_doctype_class = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
+doc_events = {
+    "Material Request": {
+        "before_insert": "flowjet_valves.public.py.material_request.copy_custom_remarks"
+    },
 # 	"*": {
 # 		"on_update": "method",
 # 		"on_cancel": "method",
 # 		"on_trash": "method"
 # 	}
-# }
+}
 
 # Scheduled Tasks
 # ---------------
