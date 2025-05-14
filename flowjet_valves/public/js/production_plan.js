@@ -1,0 +1,34 @@
+frappe.ui.form.on('Production Plan', {
+    refresh(frm) {
+        setTimeout(() => {
+            // Update custom_priority in sales_orders table
+            if (frm.doc.sales_orders && frm.doc.sales_orders.length > 0) {
+                frm.doc.sales_orders.forEach(row => {
+                    if (row.sales_order) {
+                        frappe.db.get_doc('Sales Order', row.sales_order).then(sales_order => {
+                            row.custom_priority = sales_order.custom_priority;
+                            frm.refresh_field('sales_orders');
+
+                            // Build item_priority_map from Sales Order Items
+                            let item_priority_map = {};
+                            (sales_order.items || []).forEach(so_item => {
+                                if (so_item.item_code && so_item.custom_priority) {
+                                    item_priority_map[so_item.item_code] = so_item.custom_priority;
+                                }
+                            });
+
+                            // Now update po_items based on item_code match
+                            (frm.doc.po_items || []).forEach(po_item => {
+                                if (item_priority_map[po_item.item_code]) {
+                                    po_item.custom_priority = item_priority_map[po_item.item_code];
+                                }
+                            });
+
+                            frm.refresh_field('po_items');
+                        });
+                    }
+                });
+            }
+        }, 500);
+    }
+});

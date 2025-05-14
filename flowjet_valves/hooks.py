@@ -43,7 +43,11 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+    "Sales Order" : "public/js/sales_order.js",
+    "Production Plan" : "public/js/production_plan.js",
+    "Work Order" : "public/js/work_order.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -129,9 +133,9 @@ app_license = "mit"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+    "Production Plan": "flowjet_valves.public.py.production_plan.CustomProductionPlan"
+}
 
 # Document Events
 # ---------------
@@ -173,10 +177,12 @@ app_license = "mit"
 
 # Overriding Methods
 # ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "flowjet_valves.event.get_events"
-# }
+
+override_whitelisted_methods = {
+    # "erpnext.manufacturing.doctype.production_plan.production_plan.get_sales_orders": "flowjet_valves.public.py.production_plan.custom_get_sales_orders",
+    "erpnext.manufacturing.doctype.production_plan.production_plan.get_items_for_material_requests": "flowjet_valves.public.py.production_plan.get_items_for_material_requests"
+}
+
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
