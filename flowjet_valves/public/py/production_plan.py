@@ -423,6 +423,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 						if item_detail.get("item_code") == items.get("item_code"):
 							items["custom_priority"] = item_detail.get("custom_priority")
 					mr_items.append(items)
+					print(item_details.values())
 
 	if (not ignore_existing_ordered_qty or get_parent_warehouse_data) and warehouses:
 		new_mr_items = []

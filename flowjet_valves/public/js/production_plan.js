@@ -37,4 +37,7 @@ frappe.ui.form.on('Production Plan', {
             frm.events.create_material_request(frm, 0);
         }, __('Create'));
     },
+    get_items(frm) {
+        frm.save();
+    }
 });
