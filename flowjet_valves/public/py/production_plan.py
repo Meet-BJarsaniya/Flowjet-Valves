@@ -87,7 +87,7 @@ class CustomProductionPlan(BasePlan):
                 {
                     "production_plan": self.name,
                     "production_plan_sub_assembly_item": row.name,
-                    "docstatus": 0,
+                    "docstatus": ["in", [0, 1]],
                 },
             ):
                 continue
