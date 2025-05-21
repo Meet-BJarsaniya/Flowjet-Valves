@@ -4,8 +4,8 @@ frappe.listview_settings["Work Order"] = {
             method: "flowjet_valves.public.py.work_order.get_excluded_work_orders",
             callback: function (r) {
 				if (r.message && Array.isArray(r.message) && r.message.length > 0) {
-					// Clear all existing filters
-					listview.filter_area.clear();
+					// // Clear all existing filters
+					// listview.filter_area.clear();
 					// Apply filter: name not in r.message
 					listview.filter_area.add([
 						["Work Order", "name", "not in", r.message]
