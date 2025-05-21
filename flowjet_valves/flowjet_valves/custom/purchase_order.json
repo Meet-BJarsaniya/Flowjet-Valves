@@ -43,7 +43,7 @@
    "modified_by": "Administrator",
    "module": null,
    "name": "Purchase Order-custom_items_history",
-   "no_copy": 0,
+   "no_copy": 1,
    "non_negative": 0,
    "options": "PO Items History",
    "owner": "Administrator",

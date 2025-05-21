@@ -109,7 +109,7 @@
    "name": "Job Card-custom_job_type",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nIn-house\nSub Contract\nBrought Out",
+   "options": "\nIn-house\nSub Contract",
    "owner": "Administrator",
    "permlevel": 0,
    "placeholder": null,
