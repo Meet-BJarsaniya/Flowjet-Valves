@@ -34,7 +34,7 @@
    "allow_on_submit": 1,
    "columns": 6,
    "fieldname": "details",
-   "fieldtype": "Data",
+   "fieldtype": "Long Text",
    "in_list_view": 1,
    "label": "Details",
    "read_only": 1
@@ -44,7 +44,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-05-15 15:00:14.628138",
+ "modified": "2025-05-21 16:14:05.464462",
  "modified_by": "Administrator",
  "module": "Flowjet Valves",
  "name": "PO Items History",
