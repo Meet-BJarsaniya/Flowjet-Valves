@@ -13,7 +13,7 @@ frappe.ui.form.on('Purchase Order', {
             });
 
             // Convert array to string for comparison and storage
-            let new_details = items_data.map(row => `'${row.Item}': ${row.Qty} qty @ ${row.Rate}.`).join(', ');            
+            let new_details = items_data.map(row => `'${row.Item}': ${row.Qty} qty @ ${row.Rate}`).join(', ');            
             const last_entry = frm.doc.custom_items_history.slice(-1)[0];
 
             if (!last_entry || last_entry.details !== new_details) {
