@@ -141,6 +141,7 @@ class CustomProductionPlan(BasePlan):
 				"Material Request Item",
 				{
 					"material_request_plan_item": item.name,
+					"docstatus": ["in", [0, 1]],  # Draft or Submitted
 					# "docstatus": 0  # Draft
 				}
 			)
