@@ -32,10 +32,12 @@ frappe.ui.form.on('Production Plan', {
         }, 500);
         frm.page.remove_inner_button('Material Request', 'Create');
 
-        frm.add_custom_button(__('Material Request'), function () {
-            // Directly trigger without confirmation
-            frm.events.create_material_request(frm, 0);
-        }, __('Create'));
+		if (frm.doc.docstatus === 1 && frm.doc.status !== 'Completed' && frm.doc.status !== 'Closed') {
+            frm.add_custom_button(__('Material Request'), function () {
+                // Directly trigger without confirmation
+                frm.events.create_material_request(frm, 0);
+            }, __('Create'));
+        }
     },
     get_items(frm) {
         frm.save();
