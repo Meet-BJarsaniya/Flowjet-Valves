@@ -141,12 +141,12 @@ class CustomProductionPlan(BasePlan):
 				"Material Request Item",
 				{
 					"material_request_plan_item": item.name,
-					"docstatus": 0  # Draft
+					# "docstatus": 0  # Draft
 				}
 			)
 
             if existing_mr_item:
-                frappe.throw("Material Request already exists in draft state for these items.")
+                frappe.throw("Material Request already exists.")
                 continue  # Skip this item if already exists in draft MR
 
 			# Else, add the item to the MR
