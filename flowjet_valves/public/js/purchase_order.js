@@ -7,11 +7,13 @@ frappe.ui.form.on('Purchase Order', {
                 items_data.push({
                     "Item": item.item_code,
                     "Qty": item.qty,
+                    "Rate": item.rate,
+                    // "Currency": item.currency,
                 });
             });
 
             // Convert array to string for comparison and storage
-            let new_details = items_data.map(row => `'${row.Item}': ${row.Qty}`).join(', ');            
+            let new_details = items_data.map(row => `'${row.Item}': ${row.Qty} qty @ ${row.Rate}.`).join(', ');            
             const last_entry = frm.doc.custom_items_history.slice(-1)[0];
 
             if (!last_entry || last_entry.details !== new_details) {
