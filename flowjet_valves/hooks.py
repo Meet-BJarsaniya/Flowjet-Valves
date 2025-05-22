@@ -148,7 +148,7 @@ override_doctype_class = {
 
 doc_events = {
     "Material Request": {
-        "before_insert": "flowjet_valves.public.py.material_request.copy_custom_remarks"
+        "before_insert": "flowjet_valves.public.py.material_request.copy_custom_fields"
     },
 # 	"*": {
 # 		"on_update": "method",
