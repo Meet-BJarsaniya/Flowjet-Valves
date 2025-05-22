@@ -6,7 +6,7 @@ frappe.ui.form.on('Job Card', {
                     label: 'Job Type',
                     fieldname: 'custom_job_type',
                     fieldtype: 'Select',
-                    options: ['In-house', 'Sub Contract', 'Brought Out'],
+                    options: ['In-house', 'Sub Contract'],
                     reqd: 1
                 }
             ], function(values) {
