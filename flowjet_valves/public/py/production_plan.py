@@ -395,10 +395,10 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 		if source_bom and source_bom in bom_to_priority:
 			detail["custom_priority"] = bom_to_priority[source_bom]["priority"]
 
-		if item_code in so_item_details.get(sales_order, {}):
-			so_item_details[sales_order][item_code]["qty"] += flt(detail.qty)
-		else:
-			so_item_details[sales_order][item_code] = detail
+		# if item_code in so_item_details.get(sales_order, {}):
+		# 	so_item_details[sales_order][item_code]["qty"] += flt(detail.qty)
+		# else:
+		# 	so_item_details[sales_order][item_code] = detail
 
 	# Now generate Material Request items
 	mr_items = []
