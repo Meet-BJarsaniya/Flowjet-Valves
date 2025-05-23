@@ -50,6 +50,7 @@ doctype_js = {
     "Purchase Order" : "public/js/purchase_order.js",
     "Job Card" : "public/js/job_card.js",
     "Opportunity" : "public/js/opportunity.js",
+    "Quotation" : "public/js/quotation.js",
 }
 doctype_list_js = {
     "Work Order" : "public/js/work_order_list.js",
