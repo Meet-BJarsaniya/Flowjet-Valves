@@ -63,7 +63,7 @@ frappe.ui.form.on('Sales Order Item', {
 
                 let price_list_rate = r.message.price_list_rate;
                 // Compare the rate
-                if (flt(row.rate) !== flt(price_list_rate)) {
+                if (price_list_rate && (flt(row.rate) !== flt(price_list_rate))) {
                     // Apply red style to the 'rate' field
                     $(`[data-idx="${row.idx}"] [data-fieldname="rate"]`).css("color", "red");
                 } else {
