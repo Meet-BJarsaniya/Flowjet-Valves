@@ -20,9 +20,11 @@ frappe.ui.form.on('Purchase Receipt', {
 
             Promise.all(promises).then(results => {
                 const need_approval = results.includes(true);
-                frappe.db.set_value(frm.doc.doctype, frm.doc.name, 'custom_need_approval', need_approval ? 1 : 0);
-                frm.set_value('custom_need_approval', need_approval ? 1 : 0); // optional: reflect immediately in UI
-            });
+                frappe.db.set_value(frm.doc.doctype, frm.doc.name, 'custom_need_approval', need_approval ? 1 : 0)
+        .then(() => {
+            frm.reload_doc(); // <- this will fully refresh the form with updated DB values
+        });
+});
         }
     },
     refresh: function(frm) {
