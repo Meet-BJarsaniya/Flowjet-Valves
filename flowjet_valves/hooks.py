@@ -51,6 +51,8 @@ doctype_js = {
     "Job Card" : "public/js/job_card.js",
     "Opportunity" : "public/js/opportunity.js",
     "Quotation" : "public/js/quotation.js",
+    "Item" : "public/js/item.js",
+    "Purchase Receipt" : "public/js/purchase_receipt.js",
 }
 doctype_list_js = {
     "Work Order" : "public/js/work_order_list.js",
