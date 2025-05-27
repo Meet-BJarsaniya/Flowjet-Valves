@@ -56,5 +56,6 @@ def make_new_po_from_remaining(source_name):
         target_doc=None,
         postprocess=set_missing_values
     )
+    doc.supplier = ''
 
     return doc
