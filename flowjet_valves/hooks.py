@@ -52,6 +52,7 @@ doctype_js = {
     "Opportunity" : "public/js/opportunity.js",
     "Quotation" : "public/js/quotation.js",
     "Item" : "public/js/item.js",
+    "Material Request" : "public/js/material_request.js",
     "Purchase Receipt" : "public/js/purchase_receipt.js",
 }
 doctype_list_js = {
