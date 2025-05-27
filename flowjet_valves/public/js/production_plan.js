@@ -1,20 +1,4 @@
 frappe.ui.form.on('Production Plan', {
-    onload: function(frm) {
-        if (frm.doc.docstatus == 0 && !frm.doc.custom_work_type) {
-            frappe.prompt([
-                {
-                    label: 'Work Type',
-                    fieldname: 'custom_work_type',
-                    fieldtype: 'Select',
-                    options: ['In-house', 'Brought Out'],
-                    reqd: 1
-                }
-            ], function(values) {
-                frm.set_value('custom_work_type', values.custom_work_type);
-                frm.save();  // Save the form automatically after setting the value
-            }, 'Select Work Type', 'Set');
-        }
-    },
     refresh(frm) {
         setTimeout(() => {
             // Update custom_priority in sales_orders table
