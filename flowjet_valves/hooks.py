@@ -155,6 +155,10 @@ doc_events = {
     "Material Request": {
         "before_insert": "flowjet_valves.public.py.material_request.copy_custom_fields"
     },
+    # "Job Card": {
+        # "on_update": "flowjet_valves.public.py.job_card.update_pending_qty",
+        # "after_save": "flowjet_valves.public.py.job_card.update_pending_qty",
+    # },
 # 	"*": {
 # 		"on_update": "method",
 # 		"on_cancel": "method",

@@ -1,6 +1,6 @@
 frappe.ui.form.on('Job Card', {
-    onload: function(frm) {
-        if (frm.doc.docstatus == 0 && !frm.doc.custom_job_type) {
+    refresh: function(frm) {
+        if (frm.doc.docstatus == 0) {
             frappe.prompt([
                 {
                     label: 'Job Type',
@@ -14,11 +14,14 @@ frappe.ui.form.on('Job Card', {
                     fieldname: 'custom_qty_to_subcontract',
                     fieldtype: 'Float',
                     depends_on: "eval:doc.custom_job_type === 'Sub Contract'",
-                    description: 'Total Qty To Manufacture: ' + frm.doc.for_quantity,
+                    description: frm.doc.total_completed_qty !== 0
+                        ? 'Total Qty To Manufacture: ' + frm.doc.process_loss_qty
+                        : 'Total Qty To Manufacture: ' + frm.doc.for_quantity
                 },
             ], function(values) {
                 // Check required condition manually
-                if (values.custom_job_type === 'Sub Contract' && (!values.custom_qty_to_subcontract || 0 > values.custom_qty_to_subcontract || values.custom_qty_to_subcontract > frm.doc.for_quantity)) {
+                let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
+                if (values.custom_job_type === 'Sub Contract' && (!values.custom_qty_to_subcontract || 0 > values.custom_qty_to_subcontract || values.custom_qty_to_subcontract > max_qty)) {
                     frappe.msgprint(__('Please enter a valid quantity'));
                     return;
                 }
@@ -32,6 +35,18 @@ frappe.ui.form.on('Job Card', {
 
                 frm.save(); // Save the form
             }, 'Select Job Type', 'Set');
+            if (frm.doc.custom_job_type === 'Sub Contract') {
+                frm.add_custom_button(
+                    __("Sub Contract PO"),
+                    function () {
+                        // frappe.model.open_mapped_doc({
+                        //     method: "flowjet_valves.flowjet_valves.doctype.job_card.job_card.make_sub_contract",
+                        //     frm: frm,
+                        // });
+                    },
+                    __("Create"),
+                )
+            }
         }
     },
 });
