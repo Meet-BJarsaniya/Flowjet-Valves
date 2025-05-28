@@ -1,6 +1,6 @@
 frappe.ui.form.on('Job Card', {
     refresh: function(frm) {
-        if (frm.doc.docstatus == 0) {
+        if (frm.doc.docstatus == 0 && !frm.doc.custom_job_type) {
             frappe.prompt([
                 {
                     label: 'Job Type',
@@ -25,28 +25,108 @@ frappe.ui.form.on('Job Card', {
                     frappe.msgprint(__('Please enter a valid quantity'));
                     return;
                 }
-
+                
                 frm.set_value('custom_job_type', values.custom_job_type);
-
+                
                 if (values.custom_job_type === 'Sub Contract') {
                     frm.set_value('custom_qty_to_subcontract', values.custom_qty_to_subcontract);
                     frm.set_value('for_quantity', frm.doc.for_quantity - values.custom_qty_to_subcontract);
                 }
-
+                
                 frm.save(); // Save the form
             }, 'Select Job Type', 'Set');
-            if (frm.doc.custom_job_type === 'Sub Contract') {
-                frm.add_custom_button(
-                    __("Sub Contract PO"),
-                    function () {
-                        // frappe.model.open_mapped_doc({
-                        //     method: "flowjet_valves.flowjet_valves.doctype.job_card.job_card.make_sub_contract",
-                        //     frm: frm,
-                        // });
-                    },
-                    __("Create"),
-                )
-            }
+        }
+        
+        if (frm.doc.docstatus == 0 && frm.doc.custom_job_type === 'Sub Contract' && !frm.doc.custom_subcontract_po) {            
+            frm.add_custom_button(__('Sub Contract PO'), function() {
+                // Step 1: Fetch operation document
+                frappe.db.get_doc('Operation', frm.doc.operation).then(operation_doc => {
+                    const service_item = operation_doc.custom_sub_contract_service_item;
+                    const contract_supplier = operation_doc.custom_sub_contract_supplier;
+    
+                    // Step 2: Get Subcontracting BOM by service item
+                    frappe.db.get_value('Subcontracting BOM', { service_item: service_item }, 'finished_good')
+                        .then(sub => {
+                            const finished_good = sub.message.finished_good;
+    
+                            // Step 3: Create Purchase Order
+                            frappe.call({
+                                method: "frappe.client.insert",
+                                args: {
+                                    doc: {
+                                        doctype: "Purchase Order",
+                                        is_subcontracted: 1,
+                                        supplier: contract_supplier,
+                                        schedule_date: frappe.datetime.nowdate(),
+                                        items: [
+                                            {
+                                                item_code: service_item,
+                                                fg_item: finished_good,
+                                                qty: frm.doc.custom_qty_to_subcontract,
+                                                fg_item_qty: frm.doc.custom_qty_to_subcontract,
+                                                warehouse: frm.doc.wip_warehouse || "",
+                                                conversion_factor: 1,
+                                                uom: frm.doc.uom || "Nos"
+                                            }
+                                        ]
+                                    }
+                                },
+                                callback: function (r) {
+                                    if (!r.exc) {
+                                        const po_name = r.message.name;
+    
+                                        // Step 3: Update Job Card with PO link
+                                        frappe.call({
+                                            method: "frappe.client.set_value",
+                                            args: {
+                                                doctype: "Job Card",
+                                                name: frm.doc.name,
+                                                fieldname: "custom_subcontract_po",
+                                                value: po_name
+                                            },
+                                            callback: function () {
+                                                frappe.set_route("Form", "Purchase Order", po_name);
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                });
+            }, __('Create'));
+
+            // frm.add_custom_button(__('Sub Contract PO'), function() {
+            //     let po = frappe.model.get_new_doc('Purchase Order');
+
+            //     po.is_subcontracted = 1;
+            //     po.company = frm.doc.company;
+            //     // po.supplier = ""; // leave blank, user will select
+            //     po.transaction_date = frappe.datetime.nowdate();
+
+            //     po.items = [{
+            //         item_code: "RM Sub Contract service",
+            //         fg_item: "RM Sub Contract Finished",
+            //         qty: frm.doc.custom_qty_to_subcontract,
+            //         fg_item_qty: frm.doc.custom_qty_to_subcontract,
+            //         warehouse: frm.doc.wip_warehouse || "",
+            //         conversion_factor: 1,
+            //         uom: frm.doc.uom || "Nos"
+            //     }];
+
+            //     frappe.model.with_doc("Purchase Order", po.name, function() {
+            //         frappe.set_route("Form", "Purchase Order", po.name);
+            //     });
+            // }, __('Create'));
+        }
+
+        if (frm.doc.custom_subcontract_po) {
+            frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, 'per_received').then(res => {
+                if (res.message.per_received) {
+                    frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_qty_to_subcontract);
+                    // frm.set_value('total_completed_qty', res.message.per_received/100*frm.doc.custom_qty_to_subcontract);
+                    frm.save();
+                }
+            })
         }
     },
 });
