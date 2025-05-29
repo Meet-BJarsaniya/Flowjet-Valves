@@ -156,7 +156,8 @@ doc_events = {
         "before_insert": "flowjet_valves.public.py.material_request.copy_custom_fields"
     },
     "Job Card": {
-        "before_save": "flowjet_valves.public.py.job_card.update_process_loss_qty",
+        "before_save": "flowjet_valves.public.py.job_card.update_totals",
+        "before_submit": "flowjet_valves.public.py.job_card.update_totals",
         # "on_update": "flowjet_valves.public.py.job_card.update_pending_qty",
         # "after_save": "flowjet_valves.public.py.job_card.update_pending_qty",
     },

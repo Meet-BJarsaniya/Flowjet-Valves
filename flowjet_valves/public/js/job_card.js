@@ -8,7 +8,6 @@ frappe.ui.form.on('Job Card', {
                         fieldname: 'custom_job_type',
                         fieldtype: 'Read Only',
                         default: 'Sub Contract',
-                        // reqd: 1
                     },
                     {
                         label: 'Qty To Sub-Contract',
@@ -71,7 +70,7 @@ frappe.ui.form.on('Job Card', {
         //     }, 'Select Job Type', 'Set');
         // }
         
-        if (frm.doc.docstatus == 0 && frm.doc.custom_job_type === 'Sub Contract' && !frm.doc.custom_subcontract_po) {            
+        if (frm.doc.docstatus == 0 && frm.doc.custom_job_type === 'Sub Contract' && frm.doc.for_quantity !== frm.doc.total_completed_qty) {            
             frm.add_custom_button(__('Sub Contract PO'), function() {
                 // Step 1: Fetch operation document
                 frappe.db.get_doc('Operation', frm.doc.operation).then(operation_doc => {
@@ -96,7 +95,7 @@ frappe.ui.form.on('Job Card', {
                                             {
                                                 item_code: service_item,
                                                 fg_item: finished_good,
-                                                qty: frm.doc.custom_qty_to_subcontract,
+                                                qty: frm.doc.custom_qty_to_subcontract - frm.doc.custom_po_qty,
                                                 fg_item_qty: frm.doc.custom_qty_to_subcontract,
                                                 warehouse: frm.doc.wip_warehouse || "",
                                                 conversion_factor: 1,
@@ -109,19 +108,18 @@ frappe.ui.form.on('Job Card', {
                                     if (!r.exc) {
                                         const po_name = r.message.name;
     
-                                        // Step 3: Update Job Card with PO link
-                                        frappe.call({
-                                            method: "frappe.client.set_value",
-                                            args: {
-                                                doctype: "Job Card",
-                                                name: frm.doc.name,
-                                                fieldname: "custom_subcontract_po",
-                                                value: po_name
-                                            },
-                                            callback: function () {
-                                                frappe.set_route("Form", "Purchase Order", po_name);
-                                            }
-                                        });
+                                        // Step 3: Add to child table and refresh
+                                        let row = frm.add_child("custom_subcontract_details");
+                                        row.subcontract_po = po_name;
+
+                                        frm.refresh_field("custom_subcontract_details");
+                                        frm.save();
+                                        // Optional: set main field too
+                                        // frm.set_value("custom_subcontract_po", po_name);
+
+                                        // Navigate to PO
+                                        frappe.set_route("Form", "Purchase Order", po_name);
+
                                     }
                                 }
                             });
@@ -151,40 +149,69 @@ frappe.ui.form.on('Job Card', {
             //         frappe.set_route("Form", "Purchase Order", po.name);
             //     });
             // }, __('Create'));
-        }
 
-        if (frm.doc.custom_subcontract_po) {
-            frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
-                if (res.message.docstatus == 1) {
-                    frm.set_value('custom_po_qty', res.message.total_qty);
-                    frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_po_qty);
-                    frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
-                }
-            })
+            if (frm.doc.custom_subcontract_details && frm.doc.custom_subcontract_details.length) {
+                let promises = frm.doc.custom_subcontract_details.map(sc => {
+                    if (sc.subcontract_po) {
+                        return frappe.db.get_value('Purchase Order', sc.subcontract_po, ['docstatus', 'total_qty', 'per_received'])
+                            .then(res => {
+                                if (res.message && res.message.docstatus == 1) {
+                                    sc.po_qty = res.message.total_qty;
+                                    sc.received_qty = res.message.per_received / 100 * sc.po_qty;
+                                    return {
+                                        po_qty: sc.po_qty,
+                                        received_qty: sc.received_qty
+                                    };
+                                }
+                                return { po_qty: 0, received_qty: 0 };
+                            });
+                    } else {
+                        return Promise.resolve({ po_qty: 0, received_qty: 0 });
+                    }
+                });
+
+                Promise.all(promises).then(results => {
+                    let total_po_qty = 0;
+                    let total_received_qty = 0;
+
+                    results.forEach(r => {
+                        total_po_qty += r.po_qty;
+                        total_received_qty += r.received_qty;
+                    });
+
+                    frm.set_value('custom_po_qty', total_po_qty);
+                    frm.set_value('custom_received_qty', total_received_qty);
+                    // frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(total_received_qty, 3));
+
+                    frm.refresh_field('custom_subcontract_details');
+                    frm.save();
+                });
+                // if (frm.is_dirty()) {
+                // }
+            }
+
+
+            // if (frm.doc.custom_subcontract_po) {
+            //     frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
+            //         if (res.message.docstatus == 1) {
+            //             frm.set_value('custom_po_qty', res.message.total_qty);
+            //             frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_po_qty);
+            //             frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
+            //         }
+            //     })
+            // }
         }
     },
-    // time_logs_on_form_rendered: function (frm) {
-    //     console.log("Time Logs");
-    //     if (frm.doc.custom_subcontract_po) {
-    //         frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
-    //             if (res.message.docstatus == 1) {
-    //                 frm.set_value('custom_po_qty', res.message.total_qty);
-    //                 frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_qty_to_subcontract);
-    //                 frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
-    //             }
-    //         })
-    //     }
-    // }
+    validate : function (frm) {
+        // let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
+        if (frm.doc.custom_qty_to_subcontract && (frm.doc.custom_qty_to_subcontract < frm.doc.custom_po_qty || frm.doc.custom_qty_to_subcontract > frm.doc.custom_po_qty + frm.doc.process_loss_qty)) {
+            frappe.throw(__('Subcontracted quantity must be between ' + frm.doc.custom_po_qty + ' and ' + (frm.doc.custom_po_qty + frm.doc.process_loss_qty)));
+        }
+    },
 });
 
 frappe.ui.form.on('Job Card Time Log', {
     completed_qty: function (frm, cdt, cdn) {
-        frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
-            if (res.message.docstatus == 1) {
-                frm.set_value('custom_po_qty', res.message.total_qty);
-                frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_po_qty);
-                frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
-            }
-        });
+        frm.set_value('total_completed_qty', flt(frm.doc.total_completed_qty, 3) + flt(frm.doc.custom_received_qty, 3));
     }
-})
+});
