@@ -1,41 +1,75 @@
 frappe.ui.form.on('Job Card', {
     refresh: function(frm) {
-        if (frm.doc.docstatus == 0 && !frm.doc.custom_job_type) {
-            frappe.prompt([
-                {
-                    label: 'Job Type',
-                    fieldname: 'custom_job_type',
-                    fieldtype: 'Select',
-                    options: ['In-house', 'Sub Contract'],
-                    reqd: 1
-                },
-                {
-                    label: 'Qty To Sub-Contract',
-                    fieldname: 'custom_qty_to_subcontract',
-                    fieldtype: 'Float',
-                    depends_on: "eval:doc.custom_job_type === 'Sub Contract'",
-                    description: frm.doc.total_completed_qty !== 0
-                        ? 'Total Qty To Manufacture: ' + frm.doc.process_loss_qty
-                        : 'Total Qty To Manufacture: ' + frm.doc.for_quantity
-                },
-            ], function(values) {
-                // Check required condition manually
-                let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
-                if (values.custom_job_type === 'Sub Contract' && (!values.custom_qty_to_subcontract || 0 > values.custom_qty_to_subcontract || values.custom_qty_to_subcontract > max_qty)) {
-                    frappe.msgprint(__('Please enter a valid quantity'));
-                    return;
-                }
-                
-                frm.set_value('custom_job_type', values.custom_job_type);
-                
-                if (values.custom_job_type === 'Sub Contract') {
+        if (frm.doc.docstatus == 0 && frm.doc.custom_job_type != 'Sub Contract') {
+            frm.add_custom_button(__('Sub Contract'), function() {
+                frappe.prompt([
+                    {
+                        label: 'Job Type',
+                        fieldname: 'custom_job_type',
+                        fieldtype: 'Read Only',
+                        default: 'Sub Contract',
+                        // reqd: 1
+                    },
+                    {
+                        label: 'Qty To Sub-Contract',
+                        fieldname: 'custom_qty_to_subcontract',
+                        fieldtype: 'Float',
+                        reqd: 1,
+                        depends_on: "eval:doc.custom_job_type === 'Sub Contract'",
+                        description: frm.doc.total_completed_qty !== 0
+                            ? 'Total Qty To Manufacture: ' + frm.doc.process_loss_qty
+                            : 'Total Qty To Manufacture: ' + frm.doc.for_quantity
+                    },
+                ], function(values) {
+                    // Check required condition manually
+                    let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
+                    if (values.custom_job_type === 'Sub Contract' && (!values.custom_qty_to_subcontract || 0 > values.custom_qty_to_subcontract || values.custom_qty_to_subcontract > max_qty)) {
+                        frappe.msgprint(__('Please enter a valid quantity'));
+                        return;
+                    }
+                    frm.set_value('custom_job_type', 'Sub Contract');
                     frm.set_value('custom_qty_to_subcontract', values.custom_qty_to_subcontract);
-                    frm.set_value('for_quantity', frm.doc.for_quantity - values.custom_qty_to_subcontract);
-                }
-                
-                frm.save(); // Save the form
-            }, 'Select Job Type', 'Set');
+                    frm.save();
+                }, 'Select Job Type', 'Set');
+            }, __('Make Job Type to'));
         }
+
+        // if (frm.doc.docstatus == 0 && !frm.doc.custom_job_type) {
+        //     frappe.prompt([
+        //         {
+        //             label: 'Job Type',
+        //             fieldname: 'custom_job_type',
+        //             fieldtype: 'Select',
+        //             options: ['In-house', 'Sub Contract'],
+        //             reqd: 1
+        //         },
+        //         {
+        //             label: 'Qty To Sub-Contract',
+        //             fieldname: 'custom_qty_to_subcontract',
+        //             fieldtype: 'Float',
+        //             depends_on: "eval:doc.custom_job_type === 'Sub Contract'",
+        //             description: frm.doc.total_completed_qty !== 0
+        //                 ? 'Total Qty To Manufacture: ' + frm.doc.process_loss_qty
+        //                 : 'Total Qty To Manufacture: ' + frm.doc.for_quantity
+        //         },
+        //     ], function(values) {
+        //         // Check required condition manually
+        //         let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
+        //         if (values.custom_job_type === 'Sub Contract' && (!values.custom_qty_to_subcontract || 0 > values.custom_qty_to_subcontract || values.custom_qty_to_subcontract > max_qty)) {
+        //             frappe.msgprint(__('Please enter a valid quantity'));
+        //             return;
+        //         }
+                
+        //         frm.set_value('custom_job_type', values.custom_job_type);
+                
+        //         if (values.custom_job_type === 'Sub Contract') {
+        //             frm.set_value('custom_qty_to_subcontract', values.custom_qty_to_subcontract);
+        //             frm.set_value('for_quantity', frm.doc.for_quantity - values.custom_qty_to_subcontract);
+        //         }
+                
+        //         frm.save(); // Save the form
+        //     }, 'Select Job Type', 'Set');
+        // }
         
         if (frm.doc.docstatus == 0 && frm.doc.custom_job_type === 'Sub Contract' && !frm.doc.custom_subcontract_po) {            
             frm.add_custom_button(__('Sub Contract PO'), function() {
@@ -120,13 +154,37 @@ frappe.ui.form.on('Job Card', {
         }
 
         if (frm.doc.custom_subcontract_po) {
-            frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, 'per_received').then(res => {
-                if (res.message.per_received) {
-                    frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_qty_to_subcontract);
-                    // frm.set_value('total_completed_qty', res.message.per_received/100*frm.doc.custom_qty_to_subcontract);
-                    frm.save();
+            frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
+                if (res.message.docstatus == 1) {
+                    frm.set_value('custom_po_qty', res.message.total_qty);
+                    frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_po_qty);
+                    frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
                 }
             })
         }
     },
+    // time_logs_on_form_rendered: function (frm) {
+    //     console.log("Time Logs");
+    //     if (frm.doc.custom_subcontract_po) {
+    //         frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
+    //             if (res.message.docstatus == 1) {
+    //                 frm.set_value('custom_po_qty', res.message.total_qty);
+    //                 frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_qty_to_subcontract);
+    //                 frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
+    //             }
+    //         })
+    //     }
+    // }
 });
+
+frappe.ui.form.on('Job Card Time Log', {
+    completed_qty: function (frm, cdt, cdn) {
+        frappe.db.get_value('Purchase Order', frm.doc.custom_subcontract_po, ['docstatus', 'total_qty','per_received']).then(res => {
+            if (res.message.docstatus == 1) {
+                frm.set_value('custom_po_qty', res.message.total_qty);
+                frm.set_value('custom_received_qty', res.message.per_received/100*frm.doc.custom_po_qty);
+                frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(frm.doc.custom_received_qty, 3));
+            }
+        });
+    }
+})
