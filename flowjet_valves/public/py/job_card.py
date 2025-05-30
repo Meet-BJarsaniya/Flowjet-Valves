@@ -28,6 +28,7 @@ def update_totals(doc, method):
 
     total_completed = flt(time_log_completed) + flt(received_qty)
     doc.total_completed_qty = total_completed
+    doc.custom_total_completed_inhouse_qty = flt(time_log_completed)
 
     # Calculate process loss
     doc.process_loss_qty = flt(doc.for_quantity or 0) - total_completed

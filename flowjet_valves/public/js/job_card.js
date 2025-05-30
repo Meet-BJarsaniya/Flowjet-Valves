@@ -230,6 +230,8 @@ frappe.ui.form.on('Job Card', {
 
 frappe.ui.form.on('Job Card Time Log', {
     completed_qty: function (frm, cdt, cdn) {
+        frm.set_value('custom_total_completed_inhouse_qty', flt(frm.doc.total_completed_qty, 3));
         frm.set_value('total_completed_qty', flt(frm.doc.total_completed_qty, 3) + flt(frm.doc.custom_received_qty, 3));
+        frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3));
     }
 });
