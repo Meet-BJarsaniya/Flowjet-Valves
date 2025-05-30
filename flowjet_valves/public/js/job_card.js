@@ -134,8 +134,6 @@ frappe.ui.form.on('Job Card', {
         
                                     frm.refresh_field("custom_subcontract_details");
                                     frm.save();
-                                    // Optional: set main field too
-                                    // frm.set_value("custom_subcontract_po", po_name);
         
                                     // Navigate to PO
                                     frappe.set_route("Form", "Purchase Order", po_name);
