@@ -127,8 +127,6 @@ frappe.ui.form.on('Work Order', {
     
                                 frm.refresh_field("custom_brought_out_details");
                                 frm.save();
-                                // Optional: set main field too
-                                // frm.set_value("custom_subcontract_po", po_name);
     
                                 // Navigate to PO
                                 frappe.set_route("Form", "Purchase Order", po_name);
@@ -170,7 +168,6 @@ frappe.ui.form.on('Work Order', {
 
                     frm.set_value('custom_po_qty', total_po_qty);
                     frm.set_value('custom_received_qty', total_received_qty);
-                    // frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(total_received_qty, 3));
 
                     frm.refresh_field('custom_brought_out_details');
                     frm.save();

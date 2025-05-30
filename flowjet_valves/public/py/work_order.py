@@ -1,4 +1,8 @@
 import frappe
+from erpnext.manufacturing.doctype.work_order.work_order import WorkOrder
+from frappe.utils import (cint, flt)
+from frappe import _
+
 
 @frappe.whitelist()
 def get_custom_priority_from_pp_items(item_type, item_name):
@@ -58,11 +62,6 @@ def get_excluded_work_orders():
             excluded_wo_names.append(wo.name)
 
     return excluded_wo_names
-
-
-from erpnext.manufacturing.doctype.work_order.work_order import WorkOrder
-from frappe.utils import (cint, flt)
-from frappe import _
 
 
 
