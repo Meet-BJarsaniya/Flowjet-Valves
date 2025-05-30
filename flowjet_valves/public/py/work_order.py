@@ -58,3 +58,58 @@ def get_excluded_work_orders():
             excluded_wo_names.append(wo.name)
 
     return excluded_wo_names
+
+
+from erpnext.manufacturing.doctype.work_order.work_order import WorkOrder
+from frappe.utils import (cint, flt)
+from frappe import _
+
+
+
+class CustomWorkOrder(WorkOrder):
+    def validate_qty(self):
+        # OVERRIDDEN: Don't throw error for qty <= 0
+        if (
+            self.stock_uom
+            and frappe.get_cached_value("UOM", self.stock_uom, "must_be_whole_number")
+            and abs(cint(self.qty) - flt(self.qty, self.precision("qty"))) > 0.0000001
+        ):
+            frappe.throw(
+                _(
+                    "Qty To Manufacture ({0}) cannot be a fraction for the UOM {2}. To allow this, disable '{1}' in the UOM {2}."
+                ).format(
+                    flt(self.qty, self.precision("qty")),
+                    frappe.bold(_("Must be Whole Number")),
+                    frappe.bold(self.stock_uom),
+                ),
+            )
+
+        # Keep the rest of the logic
+        if self.production_plan and self.production_plan_item and not self.production_plan_sub_assembly_item:
+            qty_dict = frappe.db.get_value(
+                "Production Plan Item", self.production_plan_item, ["planned_qty", "ordered_qty"], as_dict=1
+            )
+
+            if not qty_dict:
+                return
+
+            allowance_qty = (
+                flt(
+                    frappe.db.get_single_value(
+                        "Manufacturing Settings", "overproduction_percentage_for_work_order"
+                    )
+                )
+                / 100
+                * qty_dict.get("planned_qty", 0)
+            )
+
+            max_qty = qty_dict.get("planned_qty", 0) + allowance_qty - qty_dict.get("ordered_qty", 0)
+
+            if not max_qty > 0:
+                frappe.throw(
+                    _("Cannot produce more item for {0}").format(self.production_item)
+                )
+            elif self.qty > max_qty:
+                frappe.throw(
+                    _("Cannot produce more than {0} items for {1}").format(max_qty, self.production_item)
+                )

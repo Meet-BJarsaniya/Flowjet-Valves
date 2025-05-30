@@ -144,7 +144,8 @@ doctype_list_js = {
 # Override standard doctype classes
 
 override_doctype_class = {
-    "Production Plan": "flowjet_valves.public.py.production_plan.CustomProductionPlan"
+    "Production Plan": "flowjet_valves.public.py.production_plan.CustomProductionPlan",
+    "Work Order": "flowjet_valves.public.py.work_order.CustomWorkOrder",
 }
 
 # Document Events

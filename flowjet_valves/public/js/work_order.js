@@ -41,6 +41,8 @@ frappe.ui.form.on('Work Order', {
                     }
                     frm.set_value('custom_work_type', 'Brought Out');
                     frm.set_value('custom_qty_to_buy', values.custom_qty_to_buy);
+                    frm.set_value('custom_total_wo_qty', frm.doc.qty);
+                    frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
                     frm.save();
                 }, 'Select Work Type', 'Set');
             }, __('Make Work Type to'));
@@ -82,7 +84,7 @@ frappe.ui.form.on('Work Order', {
     //     }
     },
     refresh(frm) {
-        if (frm.doc.docstatus == 0 && frm.doc.custom_work_type === 'Brought Out') {            
+        if (frm.doc.docstatus == 0 && frm.doc.custom_work_type === 'Brought Out' && frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qty) {            
             frm.add_custom_button(__('Brought Out PO'), function() {
                 frappe.prompt([
                     {
@@ -107,7 +109,7 @@ frappe.ui.form.on('Work Order', {
                                 items: [
                                     {
                                         item_code: frm.doc.production_item,
-                                        qty: frm.doc.custom_qty_to_buy,
+                                        qty: frm.doc.custom_qty_to_buy - frm.doc.custom_po_qty,
                                         warehouse: frm.doc.fg_warehouse || "",
                                         conversion_factor: 1,
                                         uom: frm.doc.stock_uom || "Nos"
@@ -120,10 +122,10 @@ frappe.ui.form.on('Work Order', {
                                 const po_name = r.message.name;
     
                                 // Step 3: Add to child table and refresh
-                                let row = frm.add_child("custom_subcontract_details");
+                                let row = frm.add_child("custom_brought_out_details");
                                 row.subcontract_po = po_name;
     
-                                frm.refresh_field("custom_subcontract_details");
+                                frm.refresh_field("custom_brought_out_details");
                                 frm.save();
                                 // Optional: set main field too
                                 // frm.set_value("custom_subcontract_po", po_name);
@@ -136,7 +138,46 @@ frappe.ui.form.on('Work Order', {
                     });
                 }, 'Select Supplier', 'Set');
             }, __('Create'));
+
+            if (frm.doc.custom_brought_out_details && frm.doc.custom_brought_out_details.length) {
+                let promises = frm.doc.custom_brought_out_details.map(bo => {
+                    if (bo.subcontract_po) {
+                        return frappe.db.get_value('Purchase Order', bo.subcontract_po, ['docstatus', 'total_qty', 'per_received'])
+                            .then(res => {
+                                if (res.message && res.message.docstatus == 1) {
+                                    bo.po_qty = res.message.total_qty;
+                                    bo.received_qty = res.message.per_received / 100 * bo.po_qty;
+                                    return {
+                                        po_qty: bo.po_qty,
+                                        received_qty: bo.received_qty
+                                    };
+                                }
+                                return { po_qty: 0, received_qty: 0 };
+                            });
+                    } else {
+                        return Promise.resolve({ po_qty: 0, received_qty: 0 });
+                    }
+                });
+
+                Promise.all(promises).then(results => {
+                    let total_po_qty = 0;
+                    let total_received_qty = 0;
+
+                    results.forEach(r => {
+                        total_po_qty += r.po_qty;
+                        total_received_qty += r.received_qty;
+                    });
+
+                    frm.set_value('custom_po_qty', total_po_qty);
+                    frm.set_value('custom_received_qty', total_received_qty);
+                    // frm.set_value('process_loss_qty', flt(frm.doc.for_quantity, 3) - flt(frm.doc.total_completed_qty, 3) - flt(total_received_qty, 3));
+
+                    frm.refresh_field('custom_brought_out_details');
+                    frm.save();
+                });
+            }
         }
+
         if (frm.doc.production_plan_item) {
             frappe.call({
                 method: 'flowjet_valves.public.py.work_order.get_custom_priority_from_pp_items',
@@ -167,6 +208,7 @@ frappe.ui.form.on('Work Order', {
             });
         }
     },
+
     custom_priority(frm) {
         // frappe.msgprint("Updating Job Card: ");
         job_cards = frappe.get_list("Job Card", filters={"work_order": frm.doc.name}, pluck="name")
@@ -176,5 +218,18 @@ frappe.ui.form.on('Work Order', {
                 frappe.db.set_value("Job Card", job_card, "custom_priority", frm.doc.custom_priority);
             });
         }
-    }
+    },
+
+    validate : function (frm) {
+        if (frm.doc.custom_qty_to_buy < frm.doc.custom_po_qty || frm.doc.custom_qty_to_buy > frm.doc.custom_total_wo_qty) {
+            frappe.throw(__('Brought-Out quantity must be between ' + frm.doc.custom_po_qty + ' and ' + (frm.doc.custom_total_wo_qty)));
+        }
+        frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
+    },
+
+    before_submit: function (frm) {
+        if (frm.doc.custom_qty_to_buy !== frm.doc.custom_received_qty) {
+            frappe.throw(__('Received quantity must be equal to Brought-Out quantity'));
+        }
+    },
 });
