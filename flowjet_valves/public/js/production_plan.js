@@ -1,4 +1,16 @@
 frappe.ui.form.on('Production Plan', {
+    onload: function(frm) {
+        // Define priority order
+        const priority_order = ['Urgent', 'High', 'Medium', 'Low'];
+
+        // Sort mr_items table by priority
+        frm.doc.mr_items.sort((a, b) => {
+            return priority_order.indexOf(a.custom_priority) - priority_order.indexOf(b.custom_priority);
+        });
+
+        // Refresh the field to reflect new order
+        frm.refresh_field('mr_items');
+    },
     refresh(frm) {
         setTimeout(() => {
             // Update custom_priority in sales_orders table
