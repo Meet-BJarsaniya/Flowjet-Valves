@@ -15,40 +15,6 @@
 // });
 frappe.ui.form.on('Work Order', {
     onload: function(frm) {
-        if (frm.doc.docstatus == 0 && frm.doc.custom_work_type != 'Brought Out') {
-            frm.add_custom_button(__('Brought Out'), function() {
-                frappe.prompt([
-                    {
-                        label: 'Work Type',
-                        fieldname: 'custom_work_type',
-                        fieldtype: 'Read Only',
-                        default: 'Brought Out',
-                    },
-                    {
-                        label: 'Qty To Buy',
-                        fieldname: 'custom_qty_to_buy',
-                        fieldtype: 'Float',
-                        reqd: 1,
-                        depends_on: "eval:doc.custom_work_type === 'Brought Out'",
-                        description: 'Total Qty: ' + frm.doc.qty,
-                    },
-                ], function(values) {
-                    // Check required condition manually
-                    // let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
-                    if (values.custom_work_type === 'Brought Out' && (!values.custom_qty_to_buy || 0 > values.custom_qty_to_buy || values.custom_qty_to_buy > frm.doc.qty)) {
-                        frappe.msgprint(__('Please enter a valid quantity'));
-                        return;
-                    }
-                    frm.set_value('custom_work_type', 'Brought Out');
-                    frm.set_value('custom_qty_to_buy', values.custom_qty_to_buy);
-                    frm.set_value('custom_total_wo_qty', frm.doc.qty);
-                    frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
-                    frm.save();
-                }, 'Select Work Type', 'Set');
-            }, __('Make Work Type to'));
-        }
-
-
     //     if (frm.doc.docstatus == 0 && !frm.doc.custom_work_type) {
     //         frappe.prompt([
     //             {
@@ -84,6 +50,39 @@ frappe.ui.form.on('Work Order', {
     //     }
     },
     refresh(frm) {
+        if (frm.doc.docstatus == 0 && frm.doc.custom_work_type != 'Brought Out') {
+            frm.add_custom_button(__('Brought Out'), function() {
+                frappe.prompt([
+                    {
+                        label: 'Work Type',
+                        fieldname: 'custom_work_type',
+                        fieldtype: 'Read Only',
+                        default: 'Brought Out',
+                    },
+                    {
+                        label: 'Qty To Buy',
+                        fieldname: 'custom_qty_to_buy',
+                        fieldtype: 'Float',
+                        reqd: 1,
+                        depends_on: "eval:doc.custom_work_type === 'Brought Out'",
+                        description: 'Total Qty: ' + frm.doc.qty,
+                    },
+                ], function(values) {
+                    // Check required condition manually
+                    // let max_qty = frm.doc.total_completed_qty !== 0 ? frm.doc.process_loss_qty : frm.doc.for_quantity;
+                    if (values.custom_work_type === 'Brought Out' && (!values.custom_qty_to_buy || 0 > values.custom_qty_to_buy || values.custom_qty_to_buy > frm.doc.qty)) {
+                        frappe.msgprint(__('Please enter a valid quantity'));
+                        return;
+                    }
+                    frm.set_value('custom_work_type', 'Brought Out');
+                    frm.set_value('custom_qty_to_buy', values.custom_qty_to_buy);
+                    frm.set_value('custom_total_wo_qty', frm.doc.qty);
+                    frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
+                    frm.save();
+                }, 'Select Work Type', 'Set');
+            }, __('Make Work Type to'));
+        }
+        
         if (frm.doc.docstatus == 0 && frm.doc.custom_work_type === 'Brought Out' && frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qty) {            
             frm.add_custom_button(__('Brought Out PO'), function() {
                 frappe.prompt([
@@ -230,5 +229,8 @@ frappe.ui.form.on('Work Order', {
         if (frm.doc.custom_qty_to_buy !== frm.doc.custom_received_qty) {
             frappe.throw(__('Received quantity must be equal to Brought-Out quantity'));
         }
+        if (frm.doc.custom_total_wo_qty !== frm.doc.custom_qty_to_buy + frm.doc.qty) {
+            frappe.throw(__('Total WO Qty must be equal to Brought-Out quantity + Qty To Manufacture'));
+        } 
     },
 });
