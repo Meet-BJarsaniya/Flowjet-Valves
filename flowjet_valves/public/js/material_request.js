@@ -31,11 +31,9 @@ frappe.ui.form.on("Material Request", {
 					item_code: item.item_code,
 					item_name: item.item_name,
 					supplier: item.supplier,
-					selected: 0,
 					qty: item.qty,
 					name: item.name,
 				}));
-				console.log("Items:", items);
 
 				let dialog = new frappe.ui.Dialog({
 					title: __("Create Purchase Order"),
@@ -79,16 +77,6 @@ frappe.ui.form.on("Material Request", {
 							cannot_delete_all_rows: true,
 							fields: [
 								{
-									fieldtype: "Check",
-									fieldname: "selected",
-									label: "Select",
-									in_list_view: 1,
-									columns: 1.5,
-									onchange: function () {
-										updateSelectedCount();
-									},
-								},
-								{
 									fieldtype: "Data",
 									fieldname: "item_code",
 									label: "Item Code",
@@ -116,12 +104,11 @@ frappe.ui.form.on("Material Request", {
 					],
 					primary_action_label: __("Create"),
 					primary_action(values) {
-						let selected_items = values.item_table.filter((row) => row.selected);
-						console.log(selected_items);
-						if (!selected_items.length) {
-							frappe.msgprint("Please select at least one item.");
-							return;
-						}
+                        let selected_items = dialog.fields_dict.item_table.grid.get_selected_children();
+                        if (!selected_items.length) {
+                            frappe.msgprint("Please select at least one item.");
+                            return;
+                        }
 
 						dialog.hide();
 						frappe.model.open_mapped_doc({
@@ -140,32 +127,26 @@ frappe.ui.form.on("Material Request", {
 				dialog.fields_dict.item_table.df.data = items;
 				dialog.fields_dict.item_table.grid.grid_pagination.page_length = 10;
 				dialog.fields_dict.item_table.grid.refresh();
-
 				dialog.show();
 
-				// Selected count logic
-				function updateSelectedCount() {
-					let count = dialog.fields_dict.item_table.df.data.filter(
-						(row) => row.selected
-					).length;
-					dialog.set_value("selected_count", count);
-					dialog.refresh_field("selected_count");
-				}
+                // Count updater function
+                function updateSelectedCount() {
+                    let count = dialog.fields_dict.item_table.grid.get_selected().length;
+                    dialog.set_value("selected_count", count);
+                    dialog.refresh_field("selected_count");
+                }
 
-				setTimeout(() => {
-					$(dialog.fields_dict.item_table.grid.wrapper).on(
-						"change",
-						'input[type="checkbox"]',
-						function () {
-							let row_index = $(this).closest(".grid-row").attr("data-idx") - 1;
-							dialog.fields_dict.item_table.df.data[row_index].selected = this
-								.checked
-								? 1
-								: 0;
-							updateSelectedCount();
-						}
-					);
-				}, 500);
+                // Bind event listener to track selection changes
+                dialog.fields_dict.item_table.grid.wrapper.on('click', '.grid-row-check', function() {
+                    setTimeout(() => {
+                        updateSelectedCount();
+                    }, 50);
+                });
+
+                // Initial update count
+                setTimeout(() => {
+                    updateSelectedCount();
+                }, 100);
 			},
 		});
 	},
