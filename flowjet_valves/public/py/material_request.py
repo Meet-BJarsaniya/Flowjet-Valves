@@ -75,31 +75,26 @@ def get_material_request_items_with_supplier(material_request):
         filters={"parent": material_request},
         fields=["name", "item_code", "item_name", "qty"]
     )
- 
     filtered_items = []
- 
+
     for item in items:
         submitted_po = frappe.db.sql("""
             SELECT SUM(qty) FROM `tabPurchase Order Item`
             WHERE material_request_item = %s AND docstatus = 1
         """, item.name)[0][0] or 0
- 
         remaining_qty = item.qty - submitted_po
- 
+
         # Set the submitted PO qty into custom_pending_for_po_qty
         frappe.db.set_value("Material Request Item", item.name, "custom_pending_for_po_qty", remaining_qty)
- 
         if remaining_qty <= 0:
             continue
- 
         item["qty"] = remaining_qty
- 
+
         item_defaults = get_item_defaults(
             item.item_code,
             frappe.db.get_value("Material Request", material_request, "company")
         )
         item["supplier"] = item_defaults.get("default_supplier")
- 
         filtered_items.append(item)
- 
+
     return filtered_items
