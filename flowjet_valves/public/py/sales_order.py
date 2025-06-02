@@ -1,6 +1,7 @@
 import frappe
 import json
 from flowjet_valves.public.py.production_plan import get_items_for_material_requests
+from erpnext.stock.doctype.item.item import get_item_defaults
 
 @frappe.whitelist()
 def update_manufacture_cycle(name, custom_priority=None, item_priority_map=None):
@@ -78,3 +79,40 @@ def update_manufacture_cycle(name, custom_priority=None, item_priority_map=None)
             for mr_item in mr_items:
                 frappe.db.set_value("Material Request Plan Item", mr_item.name, "custom_priority", priority)
 
+
+@frappe.whitelist()
+def get_sales_order_items(sales_order):
+    items = frappe.get_all(
+        "Sales Order Item",
+        filters={"parent": sales_order},
+        fields=["name", "item_code", "item_name", "qty", "warehouse", "delivery_date", "actual_qty"]
+    )
+
+    # filtered_items = []
+
+    # for item in items:
+    #     submitted_dn = frappe.db.sql("""
+    #         SELECT SUM(qty) FROM `tabDelivery Note Item`
+    #         WHERE sales_order_item = %s AND docstatus = 1
+    #     """, item.name)[0][0] or 0
+
+    #     remaining_qty = item.qty - submitted_dn
+
+    #     # Set the submitted PO qty into custom_pending_for_po_qty
+    #     frappe.db.set_value("Sales Order Item", item.name, "custom_pending_for_po_qty", remaining_qty)
+
+    #     if remaining_qty <= 0:
+    #         continue
+
+    #     item["qty"] = remaining_qty
+
+    #     item_defaults = get_item_defaults(
+    #         item.item_code,
+    #         frappe.db.get_value("Sales Order", sales_order, "company")
+    #     )
+    #     item["supplier"] = item_defaults.get("default_supplier")
+
+    #     filtered_items.append(item)
+
+    # return filtered_items
+    return items

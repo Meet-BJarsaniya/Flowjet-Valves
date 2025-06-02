@@ -39,7 +39,166 @@ frappe.ui.form.on('Sales Order', {
                 }
             });
         });
-    }
+        if (frm.doc.docstatus == 1) frm.add_custom_button(__('Dispatch Allocation'), function() {
+            frappe.call({
+                method: "flowjet_valves.public.py.sales_order.get_sales_order_items",
+                args: { sales_order: frm.doc.name },
+                callback: function (r) {
+                    if (!r.message || r.message.length === 0) {
+                        frappe.msgprint("No items found in the Sales Order.");
+                        return;
+                    }
+
+                    let items = r.message.map((item) => ({
+                        item_code: item.item_code,
+                        item_name: item.item_name,
+                        qty: item.qty,
+                        name: item.name,
+                        warehouse: item.warehouse,
+                        // batch_no: item.batch_no,
+                        delivery_date: item.delivery_date,
+                        actual_qty: item.actual_qty
+                    }));
+                    console.log("Items:", items);
+
+                    let dialog = new frappe.ui.Dialog({
+                        title: __("Create Dispatch Allocation"),
+                        fields: [
+                            {
+                                fieldtype: "Data",
+                                fieldname: "selected_count",
+                                label: "Selected Items Count",
+                                default: 0,
+                                read_only: 1,
+                            },
+                            {
+                                fieldtype: "Table",
+                                fieldname: "item_table",
+                                label: "Items",
+                                cannot_add_rows: true,
+                                cannot_delete_all_rows: true,
+                                fields: [
+                                    {
+                                        fieldtype: "Data",
+                                        fieldname: "item_code",
+                                        label: "Item Code",
+                                        read_only: 1,
+                                        in_list_view: 1,
+                                        columns: 2,
+                                    },
+                                    {
+                                        fieldtype: "Float",
+                                        fieldname: "qty",
+                                        label: "Required Qty",
+                                        read_only: 1,
+                                        in_list_view: 1,
+                                        columns: 1,
+                                    },
+                                    {
+                                        fieldtype: "Float",
+                                        fieldname: "allocated_qty",
+                                        label: "Allocated Qty",
+                                        read_only: 0,
+                                        in_list_view: 1,
+                                        columns: 1,
+                                    },
+                                    {
+                                        fieldtype: "Float",
+                                        fieldname: "actual_qty",
+                                        label: "Available Qty",
+                                        read_only: 1,
+                                        in_list_view: 1,
+                                        columns: 1,
+                                    },
+                                    {
+                                        fieldtype: "Link",
+                                        fieldname: "warehouse",
+                                        label: "Warehouse",
+                                        options: "Warehouse",
+                                        read_only: 1,
+                                        in_list_view: 1,
+                                        columns: 2,
+                                    },
+                                    {
+                                        fieldtype: "Link",
+                                        fieldname: "batch_no",
+                                        label: "Batch No.",
+                                        options: "Batch",
+                                        read_only: 1,
+                                        in_list_view: 1,
+                                        columns: 1,
+                                    },
+                                    {
+                                        fieldtype: "Date",
+                                        fieldname: "delivery_date",
+                                        label: "Expected Dispatch Date",
+                                        read_only: 1,
+                                        in_list_view: 1,
+                                        columns: 1,
+                                    },
+                                    {
+                                        fieldtype: "Data",
+                                        fieldname: "item_name",
+                                        label: "Item Name",
+                                        read_only: 1,
+                                        columns: 3,
+                                    },
+                                ],
+                            },
+                        ],
+                        primary_action_label: __("Create"),
+                        primary_action(values) {
+                        let selected_items = dialog.fields_dict.item_table.grid.get_selected_children();
+                        if (!selected_items.length) {
+                            frappe.msgprint("Please select at least one item.");
+                            return;
+                        }
+
+                            dialog.hide();
+                            frappe.model.open_mapped_doc({
+                                method: "erpnext.selling.doctype.sales_order.sales_order.make_delivery_note",
+                                frm: frm,
+                                args: {
+                                    // supplier: values.supplier, // pass selected supplier
+                                    filtered_children: selected_items.map((row) => row.name), // pass only selected items
+                                },
+                                run_link_triggers: true,
+                            });
+                        },
+                        // Add a custom class
+                        wrapper_class: "wide-dispatch-dialog"
+                    });
+
+                    // Fill and show dialog
+                    dialog.fields_dict.item_table.df.data = items;
+                    dialog.fields_dict.item_table.grid.grid_pagination.page_length = 10;
+                    dialog.fields_dict.item_table.grid.refresh();
+                    dialog.show();
+                    dialog.$wrapper.find(".modal-content").css("width", "250%");
+                    dialog.$wrapper.find(".modal-dialog").css("margin", "1.75rem 17.5rem");
+
+                // Count updater function
+                function updateSelectedCount() {
+                    let count = dialog.fields_dict.item_table.grid.get_selected().length;
+                    dialog.set_value("selected_count", count);
+                    dialog.refresh_field("selected_count");
+                }
+
+                // Bind event listener to track selection changes
+                dialog.fields_dict.item_table.grid.wrapper.on('click', '.grid-row-check', function() {
+                    setTimeout(() => {
+                        updateSelectedCount();
+                    }, 50);
+                });
+
+                // Initial update count
+                setTimeout(() => {
+                    updateSelectedCount();
+                }, 100);
+                }
+            });
+        }, __('Make'));
+    },
 });
 
 
