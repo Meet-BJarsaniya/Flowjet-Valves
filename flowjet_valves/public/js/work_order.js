@@ -221,7 +221,9 @@ frappe.ui.form.on('Work Order', {
         if (frm.doc.custom_qty_to_buy < frm.doc.custom_po_qty || frm.doc.custom_qty_to_buy > frm.doc.custom_total_wo_qty) {
             frappe.throw(__('Brought-Out quantity must be between ' + frm.doc.custom_po_qty + ' and ' + (frm.doc.custom_total_wo_qty)));
         }
-        frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
+        if (frm.doc.custom_qty_to_buy) {
+            frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
+        }
     },
 
     before_submit: function (frm) {
