@@ -83,7 +83,7 @@ frappe.ui.form.on('Work Order', {
             }, __('Make Work Type to'));
         }
         
-        if (frm.doc.docstatus == 0 && frm.doc.custom_work_type === 'Brought Out' && frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qty) {            
+        if (frm.doc.docstatus == 0 && frm.doc.custom_work_type === 'Brought Out') {//&& frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qty) {            
             frm.add_custom_button(__('Brought Out PO'), function() {
                 frappe.prompt([
                     {
@@ -166,6 +166,10 @@ frappe.ui.form.on('Work Order', {
                     });
 
                     frm.set_value('custom_po_qty', total_po_qty);
+                    if (total_po_qty > frm.doc.custom_qty_to_buy) {
+                        frm.set_value('custom_qty_to_buy', total_po_qty);
+                        frm.set_value('custom_total_wo_qty', total_po_qty);
+                    }
                     frm.set_value('custom_received_qty', total_received_qty);
 
                     frm.refresh_field('custom_brought_out_details');
@@ -226,8 +230,8 @@ frappe.ui.form.on('Work Order', {
     },
 
     before_submit: function (frm) {
-        if (frm.doc.custom_qty_to_buy !== frm.doc.custom_received_qty) {
-            frappe.throw(__('Received quantity must be equal to Brought-Out quantity'));
+        if (frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qtyPO) {
+            frappe.throw(__('PO quantity must be equal to Brought-Out quantity'));
         }
         if (frm.doc.custom_total_wo_qty !== frm.doc.custom_qty_to_buy + frm.doc.qty) {
             frappe.throw(__('Total WO Qty must be equal to Brought-Out quantity + Qty To Manufacture'));
