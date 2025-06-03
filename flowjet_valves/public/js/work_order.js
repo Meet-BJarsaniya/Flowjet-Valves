@@ -168,7 +168,9 @@ frappe.ui.form.on('Work Order', {
                     frm.set_value('custom_po_qty', total_po_qty);
                     if (total_po_qty > frm.doc.custom_qty_to_buy) {
                         frm.set_value('custom_qty_to_buy', total_po_qty);
-                        frm.set_value('custom_total_wo_qty', total_po_qty);
+                        if (total_po_qty > frm.doc.custom_total_wo_qty) {
+                            frm.set_value('custom_total_wo_qty', total_po_qty);
+                        }
                     }
                     frm.set_value('custom_received_qty', total_received_qty);
 
@@ -230,7 +232,7 @@ frappe.ui.form.on('Work Order', {
     },
 
     before_submit: function (frm) {
-        if (frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qtyPO) {
+        if (frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qty) {
             frappe.throw(__('PO quantity must be equal to Brought-Out quantity'));
         }
         if (frm.doc.custom_total_wo_qty !== frm.doc.custom_qty_to_buy + frm.doc.qty) {
