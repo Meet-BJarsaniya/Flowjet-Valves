@@ -52,12 +52,11 @@ frappe.ui.form.on('Sales Order', {
                     let items = r.message.map((item) => ({
                         item_code: item.item_code,
                         item_name: item.item_name,
-                        qty: item.qty,
+                        qty: item.qty - item.delivered_qty,
                         name: item.name,
                         warehouse: item.warehouse,
-                        // batch_no: item.batch_no,
                         delivery_date: item.delivery_date,
-                        actual_qty: item.actual_qty
+                        actual_qty: item.actual_qty - item.delivered_qty,
                     }));
                     console.log("Items:", items);
 
@@ -153,8 +152,11 @@ frappe.ui.form.on('Sales Order', {
                                 method: "erpnext.selling.doctype.sales_order.sales_order.make_delivery_note",
                                 frm: frm,
                                 args: {
-                                    // supplier: values.supplier, // pass selected supplier
-                                    filtered_children: selected_items.map((row) => row.name), // pass only selected items
+                                    filtered_children: selected_items.map(row => ({
+                                        name: row.name,
+                                        allocated_qty: row.allocated_qty,
+                                        warehouse: row.warehouse
+                                    })),
                                 },
                                 run_link_triggers: true,
                             });

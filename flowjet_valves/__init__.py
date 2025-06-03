@@ -86,6 +86,8 @@ def custom_make_delivery_note(source_name, target_doc=None, kwargs=None):
 	kwargs = frappe._dict(kwargs)
 
 	filtered_items = kwargs.get("filtered_children", []) if kwargs else []
+	filtered_items_map = {item["name"]: item for item in filtered_items}
+	print("filtered_items", filtered_items)
 	sre_details = {}
 
 	if kwargs.for_reserved_stock:
@@ -128,13 +130,20 @@ def custom_make_delivery_note(source_name, target_doc=None, kwargs=None):
 			if cstr(doc.delivery_date) not in frappe.flags.args.delivery_dates:
 				return False
 
-		child_match = doc.name in filtered_items if filtered_items else True
+		child_match = doc.name in filtered_items_map if filtered_items else True
 		return abs(doc.delivered_qty) < abs(doc.qty) and doc.delivered_by_supplier != 1 and child_match
 
 	def update_item(source, target, source_parent):
-		target.base_amount = (flt(source.qty) - flt(source.delivered_qty)) * flt(source.base_rate)
-		target.amount = (flt(source.qty) - flt(source.delivered_qty)) * flt(source.rate)
-		target.qty = flt(source.qty) - flt(source.delivered_qty)
+		filtered_item = filtered_items_map.get(source.name)
+
+		if filtered_item:
+			target.qty = flt(filtered_item.get("allocated_qty", 0))
+			target.warehouse = filtered_item.get("warehouse")
+		else:
+			target.qty = flt(source.qty) - flt(source.delivered_qty)
+
+		target.base_amount = target.qty * flt(source.base_rate)
+		target.amount = target.qty * flt(source.rate)
 
 		item = get_item_defaults(target.item_code, source_parent.company)
 		item_group = get_item_group_defaults(target.item_code, source_parent.company)
@@ -190,7 +199,12 @@ def custom_make_delivery_note(source_name, target_doc=None, kwargs=None):
 					ignore_permissions=True,
 				)
 
-				dn_item.qty = flt(sre.reserved_qty) / flt(dn_item.get("conversion_factor", 1))
+				filtered_item = filtered_items_map.get(sre.voucher_detail_no)
+				if filtered_item:
+					dn_item.qty = flt(filtered_item.get("allocated_qty", sre.reserved_qty)) / flt(dn_item.get("conversion_factor", 1))
+					dn_item.warehouse = filtered_item.get("warehouse")
+				else:
+					dn_item.qty = flt(sre.reserved_qty) / flt(dn_item.get("conversion_factor", 1))
 
 				if sre.reservation_based_on == "Serial and Batch" and (sre.has_serial_no or sre.has_batch_no):
 					dn_item.serial_and_batch_bundle = get_ssb_bundle_for_voucher(sre)
@@ -202,6 +216,7 @@ def custom_make_delivery_note(source_name, target_doc=None, kwargs=None):
 				item.idx = idx + 1
 
 	set_missing_values(so, target_doc)
+	target_doc.set_warehouse = ''
 	return target_doc
 
 # Patch the default ERPNext function

@@ -85,7 +85,7 @@ def get_sales_order_items(sales_order):
     items = frappe.get_all(
         "Sales Order Item",
         filters={"parent": sales_order},
-        fields=["name", "item_code", "item_name", "qty", "warehouse", "delivery_date", "actual_qty"]
+        fields=["name", "item_code", "item_name", "qty", "warehouse", "delivery_date", "actual_qty", "delivered_qty"]
     )
     filtered_items = []
 
@@ -94,26 +94,23 @@ def get_sales_order_items(sales_order):
             SELECT SUM(qty) FROM `tabDelivery Note Item`
             WHERE item_code = %s AND docstatus = 1
         """, item.item_code)[0][0] or 0
-        frappe.msgprint(str(submitted_dn))
 
         remaining_qty = item.qty - submitted_dn
-        frappe.msgprint(str(remaining_qty))
 
         # Set the submitted DN qty into custom_pending_for_po_qty
-    #     frappe.db.set_value("Sales Order Item", item.name, "custom_pending_for_po_qty", remaining_qty)
+        # frappe.db.set_value("Sales Order Item", item.name, "custom_pending_for_po_qty", remaining_qty)
 
-    #     if remaining_qty <= 0:
-    #         continue
+        if remaining_qty <= 0:
+            continue
 
-    #     item["qty"] = remaining_qty
+        # item["qty"] = remaining_qty
 
-    #     item_defaults = get_item_defaults(
-    #         item.item_code,
-    #         frappe.db.get_value("Sales Order", sales_order, "company")
-    #     )
-    #     item["supplier"] = item_defaults.get("default_supplier")
+        item_defaults = get_item_defaults(
+            item.item_code,
+            frappe.db.get_value("Sales Order", sales_order, "company")
+        )
+        item["supplier"] = item_defaults.get("default_supplier")
 
-    #     filtered_items.append(item)
+        filtered_items.append(item)
 
-    # return filtered_items
-    return items
+    return filtered_items
