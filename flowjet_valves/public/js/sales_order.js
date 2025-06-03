@@ -56,7 +56,7 @@ frappe.ui.form.on('Sales Order', {
                         name: item.name,
                         warehouse: item.warehouse,
                         delivery_date: item.delivery_date,
-                        actual_qty: item.actual_qty - item.delivered_qty,
+                        actual_qty: item.actual_qty,
                     }));
                     console.log("Items:", items);
 
