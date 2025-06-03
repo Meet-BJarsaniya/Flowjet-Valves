@@ -87,18 +87,19 @@ def get_sales_order_items(sales_order):
         filters={"parent": sales_order},
         fields=["name", "item_code", "item_name", "qty", "warehouse", "delivery_date", "actual_qty"]
     )
+    filtered_items = []
 
-    # filtered_items = []
+    for item in items:
+        submitted_dn = frappe.db.sql("""
+            SELECT SUM(qty) FROM `tabDelivery Note Item`
+            WHERE item_code = %s AND docstatus = 1
+        """, item.item_code)[0][0] or 0
+        frappe.msgprint(str(submitted_dn))
 
-    # for item in items:
-    #     submitted_dn = frappe.db.sql("""
-    #         SELECT SUM(qty) FROM `tabDelivery Note Item`
-    #         WHERE sales_order_item = %s AND docstatus = 1
-    #     """, item.name)[0][0] or 0
+        remaining_qty = item.qty - submitted_dn
+        frappe.msgprint(str(remaining_qty))
 
-    #     remaining_qty = item.qty - submitted_dn
-
-    #     # Set the submitted PO qty into custom_pending_for_po_qty
+        # Set the submitted DN qty into custom_pending_for_po_qty
     #     frappe.db.set_value("Sales Order Item", item.name, "custom_pending_for_po_qty", remaining_qty)
 
     #     if remaining_qty <= 0:

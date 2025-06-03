@@ -42,7 +42,7 @@ frappe.ui.form.on('Sales Order', {
         if (frm.doc.docstatus == 1) frm.add_custom_button(__('Dispatch Allocation'), function() {
             frappe.call({
                 method: "flowjet_valves.public.py.sales_order.get_sales_order_items",
-                args: { sales_order: frm.doc.name },
+                args: { sales_order: frm.doc.name,  },
                 callback: function (r) {
                     if (!r.message || r.message.length === 0) {
                         frappe.msgprint("No items found in the Sales Order.");
@@ -103,6 +103,9 @@ frappe.ui.form.on('Sales Order', {
                                         columns: 1,
                                     },
                                     {
+                                        fieldtype: "Column Break",
+                                    },
+                                    {
                                         fieldtype: "Float",
                                         fieldname: "actual_qty",
                                         label: "Available Qty",
@@ -115,18 +118,9 @@ frappe.ui.form.on('Sales Order', {
                                         fieldname: "warehouse",
                                         label: "Warehouse",
                                         options: "Warehouse",
-                                        read_only: 1,
+                                        read_only: 0,
                                         in_list_view: 1,
                                         columns: 2,
-                                    },
-                                    {
-                                        fieldtype: "Link",
-                                        fieldname: "batch_no",
-                                        label: "Batch No.",
-                                        options: "Batch",
-                                        read_only: 1,
-                                        in_list_view: 1,
-                                        columns: 1,
                                     },
                                     {
                                         fieldtype: "Date",
@@ -174,8 +168,8 @@ frappe.ui.form.on('Sales Order', {
                     dialog.fields_dict.item_table.grid.grid_pagination.page_length = 10;
                     dialog.fields_dict.item_table.grid.refresh();
                     dialog.show();
-                    dialog.$wrapper.find(".modal-content").css("width", "250%");
-                    dialog.$wrapper.find(".modal-dialog").css("margin", "1.75rem 17.5rem");
+                    dialog.$wrapper.find(".modal-content").css("width", "70vw");
+                    dialog.$wrapper.find(".modal-dialog").css("margin", "1.75rem 15vw");
 
                 // Count updater function
                 function updateSelectedCount() {
