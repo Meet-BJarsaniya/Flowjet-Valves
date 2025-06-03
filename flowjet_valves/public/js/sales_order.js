@@ -187,6 +187,47 @@ frappe.ui.form.on('Sales Order', {
                     }, 50);
                 });
 
+                // Bind event listener to track selection changes
+                dialog.fields_dict.item_table.grid.wrapper.on('change', '[data-fieldname="warehouse"] input', function () {
+                    let $input = $(this);
+                    let new_warehouse = $input.val();
+
+                    // Get the corresponding grid row element
+                    let $row = $input.closest('.grid-row');
+                    let row_name = $row.attr('data-name');  // This is the key part
+
+                    // Now get the row from the grid using the row name
+                    let grid_row = dialog.fields_dict.item_table.grid.get_row(row_name);
+                    if (!grid_row) return;
+
+                    let item_code = grid_row.doc.item_code;
+                    if (!item_code || !new_warehouse) return;
+
+                    // Fetch and update actual_qty
+                    frappe.call({
+                        method: "frappe.client.get_value",
+                        args: {
+                            doctype: "Bin",
+                            filters: {
+                                item_code: item_code,
+                                warehouse: new_warehouse
+                            },
+                            fieldname: "actual_qty"
+                        },
+                        callback: function (r) {
+                            if (r.message) {
+                                let qty = r.message.actual_qty || 0;
+
+                                // Update the actual_qty field in the row doc
+                                grid_row.doc.actual_qty = qty;
+
+                                // Refresh the field visually
+                                grid_row.refresh_field("actual_qty");
+                            }
+                        }
+                    });
+                });
+
                 // Initial update count
                 setTimeout(() => {
                     updateSelectedCount();
