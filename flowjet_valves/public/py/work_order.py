@@ -61,6 +61,18 @@ def get_excluded_work_orders():
             # If any sub-assembly is NOT completed → EXCLUDE this finished WO
             excluded_wo_names.append(wo.name)
 
+    #def update_stock_availability_in_bulk():
+    work_orders = frappe.get_all("Work Order", filters={"docstatus": ["<", 2]}, fields=["name"])
+    for wo in work_orders:
+        doc = frappe.get_doc("Work Order", wo.name)
+        custom_stock_availability = 1
+        for item in doc.required_items:
+            if item.required_qty > (item.available_qty_at_source_warehouse or 0) + (item.available_qty_at_wip_warehouse or 0):
+                custom_stock_availability = 0
+                break
+        if doc.custom_stock_availability != custom_stock_availability:
+            doc.db_set("custom_stock_availability", custom_stock_availability)
+    
     return excluded_wo_names
 
 
