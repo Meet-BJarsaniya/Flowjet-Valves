@@ -51,7 +51,8 @@ def update_manufacture_cycle(name, custom_priority=None, item_priority_map=None)
                 for wo_name in work_order_sub_assemblies:
                     work_order = frappe.get_doc("Work Order", wo_name)
                     work_order.custom_priority = item_priority_map[item.parent_item_code]
-                    work_order.save(ignore_permissions=True)
+                    if work_order.docstatus == 1:
+                        work_order.save(ignore_permissions=True)
 
                     job_cards = frappe.get_list("Job Card", filters={"work_order": wo_name}, pluck="name")
                     for jc_name in job_cards:
@@ -67,7 +68,7 @@ def update_manufacture_cycle(name, custom_priority=None, item_priority_map=None)
             priority = item.get("custom_priority")
 
             # Find matching Material Request Plan Item rows (you can narrow down further using production_plan or company if needed)
-            mr_items = frappe.get_all(
+            mrp_items = frappe.get_all(
                 "Material Request Plan Item",
                 filters={
                     "item_code": item_code,
@@ -76,8 +77,92 @@ def update_manufacture_cycle(name, custom_priority=None, item_priority_map=None)
                 fields=["name"]
             )
 
+            for mrp_item in mrp_items:
+                frappe.db.set_value("Material Request Plan Item", mrp_item.name, "custom_priority", priority)
+
+            # Find matching Material Request Item rows (you can narrow down further using production_plan or company if needed)
+            mr_items = frappe.get_all(
+                "Material Request Item",
+                filters={
+                    "item_code": item_code,
+                    "production_plan": production_plan.name,
+                    "docstatus" : ["!=", 2],
+                },
+                fields=["name", "parent"]
+            )
+
             for mr_item in mr_items:
-                frappe.db.set_value("Material Request Plan Item", mr_item.name, "custom_priority", priority)
+                frappe.db.set_value("Material Request Item", mr_item.name, "custom_priority", priority)
+
+                # Find matching RFQ Item rows
+                rfq_items = frappe.get_all(
+                    "Request for Quotation Item",
+                    filters={
+                        "item_code": item_code,
+                        "material_request": mr_item.parent,
+                        "docstatus" : ["!=", 2],
+                    },
+                    fields=["name"]
+                )
+
+                for rfq_item in rfq_items:
+                    frappe.db.set_value("Request for Quotation Item", rfq_item.name, "custom_priority", priority)
+
+                # Find matching SQ Item rows
+                sq_items = frappe.get_all(
+                    "Supplier Quotation Item",
+                    filters={
+                        "item_code": item_code,
+                        "material_request": mr_item.parent,
+                        "docstatus" : ["!=", 2],
+                    },
+                    fields=["name"]
+                )
+
+                for sq_item in sq_items:
+                    frappe.db.set_value("Supplier Quotation Item", sq_item.name, "custom_priority", priority)
+
+                # Find matching PO Item rows
+                po_items = frappe.get_all(
+                    "Purchase Order Item",
+                    filters={
+                        "item_code": item_code,
+                        "material_request": mr_item.parent,
+                        "docstatus" : ["!=", 2],
+                    },
+                    fields=["name", "parent"]
+                )
+
+                for po_item in po_items:
+                    frappe.db.set_value("Purchase Order Item", po_item.name, "custom_priority", priority)
+
+                    # Find matching PR Item rows
+                    pr_items = frappe.get_all(
+                        "Purchase Receipt Item",
+                        filters={
+                            "item_code": item_code,
+                            "purchase_order": po_item.parent,
+                            "docstatus" : ["!=", 2],
+                        },
+                        fields=["name"]
+                    )
+
+                    for pr_item in pr_items:
+                        frappe.db.set_value("Purchase Receipt Item", pr_item.name, "custom_priority", priority)
+
+                    # Find matching PI Item rows
+                    pi_items = frappe.get_all(
+                        "Purchase Invoice Item",
+                        filters={
+                            "item_code": item_code,
+                            "purchase_order": po_item.parent,
+                            "docstatus" : ["!=", 2],
+                        },
+                        fields=["name"]
+                    )
+
+                    for pi_item in pi_items:
+                        frappe.db.set_value("Purchase Invoice Item", pi_item.name, "custom_priority", priority)
 
 
 @frappe.whitelist()
