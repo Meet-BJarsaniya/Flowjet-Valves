@@ -235,7 +235,7 @@ frappe.ui.form.on('Work Order', {
         if (frm.doc.custom_qty_to_buy !== frm.doc.custom_po_qty) {
             frappe.throw(__('PO quantity must be equal to Brought-Out quantity'));
         }
-        if (frm.doc.custom_total_wo_qty !== frm.doc.custom_qty_to_buy + frm.doc.qty) {
+        if (frm.doc.custom_work_type == 'Sub Contract' && frm.doc.custom_total_wo_qty !== frm.doc.custom_qty_to_buy + frm.doc.qty) {
             frappe.throw(__('Total WO Qty must be equal to Brought-Out quantity + Qty To Manufacture'));
         } 
     },
