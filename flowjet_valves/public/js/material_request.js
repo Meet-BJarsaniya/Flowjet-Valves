@@ -153,7 +153,7 @@ frappe.ui.form.on("Material Request", {
 
 	onload: function (frm) {
 		// Define priority order
-		const priority_order = ["Urgent", "High", "Medium", "Low"];
+		const priority_order = ["Urgent", "High", "Medium", "Low", ""];
 
 		// Sort items table by priority
 		frm.doc.items.sort((a, b) => {
