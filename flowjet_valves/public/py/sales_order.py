@@ -199,3 +199,26 @@ def get_sales_order_items(sales_order):
         filtered_items.append(item)
 
     return filtered_items
+
+
+@frappe.whitelist()
+def get_last_item_rate(party_name, item_code):
+    if not (party_name and item_code):
+        return None
+
+    sales_order_names = frappe.get_all("Sales Order", filters={
+        "customer": party_name,
+        "docstatus": 1
+    }, fields=["name"], order_by="transaction_date desc", limit=5)
+
+    if not sales_order_names:
+        return None
+
+    names = [so.name for so in sales_order_names]
+
+    item = frappe.get_all("Sales Order Item", filters={
+        "parent": ["in", names],
+        "item_code": item_code
+    }, fields=["base_rate"], order_by="creation desc", limit=1)
+
+    return item[0]["base_rate"] if item else None

@@ -4,7 +4,7 @@ frappe.ui.form.on('Quotation Item', {
 
         if (row.item_code && frm.doc.party_name) {
             frappe.call({
-                method: 'flowjet_valves.public.py.quotation.get_last_item_rate',
+                method: 'flowjet_valves.public.py.sales_order.get_last_item_rate',
                 args: {
                     party_name: frm.doc.party_name,
                     item_code: row.item_code
