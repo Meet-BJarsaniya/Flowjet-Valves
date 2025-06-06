@@ -72,6 +72,12 @@ def get_excluded_work_orders():
                 break
         if doc.custom_stock_availability != custom_stock_availability:
             doc.db_set("custom_stock_availability", custom_stock_availability)
+        #def update_stock_availability_in_bulk() in Job Card:
+        job_cards = frappe.get_all("Job Card", filters={"docstatus": ["<", 2], "work_order": wo.name}, fields=["name"])
+        for jc in job_cards:
+            doc = frappe.get_doc("Job Card", jc.name)
+            if doc.custom_stock_availability != custom_stock_availability:
+                doc.db_set("custom_stock_availability", custom_stock_availability)
     
     return excluded_wo_names
 
