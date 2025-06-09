@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-06-09 12:29:18.245911",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "available_qty_at_source_wh",
+  "source_warehouse",
+  "available_qty_at_target_wh",
+  "target_warehouse",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "source_warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "columns": 2,
+   "fieldname": "target_warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Target Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "columns": 1,
+   "fieldname": "available_qty_at_source_wh",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Available Qty at Source WH",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "available_qty_at_target_wh",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Available Qty at Target WH",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "label": "Remarks"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-06-09 17:31:57.397231",
+ "modified_by": "Administrator",
+ "module": "Flowjet Valves",
+ "name": "PO Mold Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

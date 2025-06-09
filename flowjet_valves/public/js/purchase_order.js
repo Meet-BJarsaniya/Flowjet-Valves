@@ -14,8 +14,22 @@ frappe.ui.form.on('Purchase Order', {
 		// Refresh the field to reflect new order
 		frm.refresh_field("items");
 	},
+    
     refresh(frm) {
         if (frm.doc.docstatus == 1) {
+            if (frm.doc.custom_mold_items?.length > 0) {
+                frm.add_custom_button('Mold Stock Entry', () => {
+                    frappe.call({
+                        method: 'flowjet_valves.public.py.purchase_order.make_mold_stock_entry',
+                        args: { po_name: frm.doc.name },
+                        callback: function(r) {
+                            if (r.message) {
+                                frappe.set_route('Form', 'Stock Entry', r.message);
+                            }
+                        }
+                    });
+                }, 'Make');
+            }
             let items_data = [];
 
             frm.doc.items.forEach(item => {
@@ -102,4 +116,265 @@ frappe.ui.form.on('Purchase Order', {
             }
         }
     },
+
+    async validate(frm) {
+        for (const item of frm.doc.items) {
+            await fetch_and_set_mold_items(frm, item.item_code);
+        }
+    }
 });
+
+
+
+// frappe.ui.form.on('Purchase Order Item', {
+//     item_code(frm, cdt, cdn) {
+//         let item_row = locals[cdt][cdn];
+
+//         frappe.call({
+//             method: 'frappe.client.get_list',
+//             args: {
+//                 doctype: 'Item',
+//                 filters: {
+//                     custom_mold_for_item: item_row.item_code
+//                 },
+//                 fields: ['name', 'item_name']
+//             },
+//             callback(r) {
+//                 if (!r.message || r.message.length === 0) return;
+
+//                 // Get supplier warehouse from Supplier master
+//                 if (!frm.doc.supplier) {
+//                     frappe.msgprint("Please select a Supplier first to fetch mold warehouse.");
+//                     return;
+//                 }
+
+//                 frappe.call({
+//                     method: 'frappe.client.get_value',
+//                     args: {
+//                         doctype: 'Supplier',
+//                         filters: { name: frm.doc.supplier },
+//                         fieldname: 'custom_warehouse'
+//                     },
+//                     callback(supplier_res) {
+//                         const supplier_warehouse = supplier_res.message?.custom_warehouse;
+
+//                         if (!supplier_warehouse) {
+//                             frappe.msgprint("Supplier warehouse is not set in the Supplier master.");
+//                             return;
+//                         }
+
+//                         r.message.forEach(mold => {
+//                             let source_warehouse = 'Stores - FJD';  // your default source warehouse
+
+//                             // Check if the mold item already exists in the table
+//                             const already_exists = frm.doc.custom_mold_items.some(row => row.item_code === mold.name);
+
+//                             if (already_exists) {
+//                                 console.log(`Mold item ${mold.name} already exists — skipping.`);
+//                                 return;
+//                             }
+
+//                             // Add new row
+//                             let mold_row = frm.add_child('custom_mold_items', {
+//                                 item_code: mold.name,
+//                                 item_name: mold.item_name,
+//                                 source_warehouse: source_warehouse,
+//                                 target_warehouse: supplier_warehouse
+//                             });
+
+//                             // Fetch available qty in source & target warehouse
+//                             set_available_qty(mold.name, source_warehouse, 'available_qty_at_source_wh', mold_row, frm);
+//                             set_available_qty(mold.name, supplier_warehouse, 'available_qty_at_target_wh', mold_row, frm);
+//                         });
+//                     }
+//                 });
+//             }
+//         });
+//     },
+// });
+// frappe.ui.form.on('Purchase Order Item', {
+//     item_code(frm, cdt, cdn) {
+//         let row = locals[cdt][cdn];
+//         fetch_and_add_molds(frm, row.item_code);
+//     }
+// });
+frappe.ui.form.on('Purchase Order Item', {
+    item_code(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.item_code) {
+            fetch_and_set_mold_items(frm, row.item_code);
+        }
+    }
+});
+
+
+frappe.ui.form.on('PO Mold Item', {
+    source_warehouse(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.item_code && row.source_warehouse) {
+            set_available_qty(row.item_code, row.source_warehouse, 'available_qty_at_source_wh', row, frm);
+        }
+    },
+
+    target_warehouse(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.item_code && row.target_warehouse) {
+            set_available_qty(row.item_code, row.target_warehouse, 'available_qty_at_target_wh', row, frm);
+        }
+    },
+});
+
+
+// function set_available_qty(item_code, warehouse, fieldname, row, frm) {
+//     if (!item_code || !warehouse) return;
+//     frappe.call({
+//         method: 'frappe.client.get_value',
+//         args: {
+//             doctype: 'Bin',
+//             filters: {
+//                 item_code: item_code,
+//                 warehouse: warehouse
+//             },
+//             fieldname: 'actual_qty'
+//         },
+//         callback: function(res) {
+//             row[fieldname] = res.message.actual_qty || 0;
+//             frm.refresh_field('custom_mold_items');
+//         }
+//     });
+// }
+async function set_available_qty(item_code, warehouse, fieldname, row, frm) {
+    if (!item_code || !warehouse) return;
+
+    const res = await frappe.call({
+        method: 'frappe.client.get_value',
+        args: {
+            doctype: 'Bin',
+            filters: {
+                item_code: item_code,
+                warehouse: warehouse
+            },
+            fieldname: 'actual_qty'
+        }
+    });
+
+    row[fieldname] = res.message?.actual_qty || 0;
+    frm.refresh_field('custom_mold_items');
+}
+
+
+// function fetch_and_add_molds(frm, item_code) {
+//     if (!item_code) return;
+
+//     // Get all molds for this item
+//     frappe.call({
+//         method: 'frappe.client.get_list',
+//         args: {
+//             doctype: 'Item',
+//             filters: {
+//                 custom_mold_for_item: item_code
+//             },
+//             fields: ['name', 'item_name']
+//         },
+//         callback(r) {
+//             if (!r.message || r.message.length === 0) return;
+
+//             // Get supplier warehouse
+//             if (!frm.doc.supplier) {
+//                 frappe.msgprint("Please select a Supplier first to fetch mold warehouse.");
+//                 return;
+//             }
+
+//             frappe.call({
+//                 method: 'frappe.client.get_value',
+//                 args: {
+//                     doctype: 'Supplier',
+//                     filters: { name: frm.doc.supplier },
+//                     fieldname: 'custom_warehouse'
+//                 },
+//                 callback(supplier_res) {
+//                     const supplier_warehouse = supplier_res.message?.custom_warehouse;
+
+//                     if (!supplier_warehouse) {
+//                         frappe.msgprint("Supplier warehouse is not set in the Supplier master.");
+//                         return;
+//                     }
+
+//                     r.message.forEach(mold => {
+//                         let source_warehouse = 'Stores - FJD';
+
+//                         const already_exists = frm.doc.custom_mold_items.some(row => row.item_code === mold.name);
+
+//                         if (already_exists) return;
+
+//                         let mold_row = frm.add_child('custom_mold_items', {
+//                             item_code: mold.name,
+//                             item_name: mold.item_name,
+//                             source_warehouse,
+//                             target_warehouse: supplier_warehouse
+//                         });
+
+//                         // Fetch stock qtys
+//                         set_available_qty(mold.name, source_warehouse, 'available_qty_at_source_wh', mold_row, frm);
+//                         set_available_qty(mold.name, supplier_warehouse, 'available_qty_at_target_wh', mold_row, frm);
+//                     });
+
+//                     frm.refresh_field('custom_mold_items');
+//                 }
+//             });
+//         }
+//     });
+// }
+async function fetch_and_set_mold_items(frm, item_code) {
+    if (!frm.doc.supplier) {
+        frappe.msgprint("Please select a Supplier first.");
+        return;
+    }
+
+    // Get supplier warehouse
+    let supplier_res = await frappe.call({
+        method: 'frappe.client.get_value',
+        args: {
+            doctype: 'Supplier',
+            filters: { name: frm.doc.supplier },
+            fieldname: 'custom_warehouse'
+        }
+    });
+
+    const supplier_warehouse = supplier_res.message?.custom_warehouse;
+    if (!supplier_warehouse) {
+        frappe.msgprint("Supplier warehouse is not set in the Supplier master.");
+        return;
+    }
+
+    // Get mold items
+    let item_res = await frappe.call({
+        method: 'frappe.client.get_list',
+        args: {
+            doctype: 'Item',
+            filters: { custom_mold_for_item: item_code },
+            fields: ['name', 'item_name']
+        }
+    });
+
+    if (!item_res.message || item_res.message.length === 0) return;
+
+    const source_warehouse = 'Stores - FJD'; // Default source WH
+
+    for (const mold of item_res.message) {
+        const already_exists = frm.doc.custom_mold_items.some(row => row.item_code === mold.name);
+        if (already_exists) continue;
+
+        let mold_row = frm.add_child('custom_mold_items', {
+            item_code: mold.name,
+            item_name: mold.item_name,
+            source_warehouse: source_warehouse,
+            target_warehouse: supplier_warehouse
+        });
+
+        await set_available_qty(mold.name, source_warehouse, 'available_qty_at_source_wh', mold_row, frm);
+        await set_available_qty(mold.name, supplier_warehouse, 'available_qty_at_target_wh', mold_row, frm);
+    }
+
+    frm.refresh_field('custom_mold_items');
+}
