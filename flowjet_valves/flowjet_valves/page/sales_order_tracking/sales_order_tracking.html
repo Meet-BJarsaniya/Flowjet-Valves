@@ -1,0 +1,54 @@
+
+<div style="font-weight:bold">
+    <div style="width: 100%; height: 8px; border-top: 2px dashed gray; margin-top: 8px;"></div>
+    <div class="container">
+        <div class="row" style="margin-bottom: 8px;">
+            <span style="width: 18%;">Draft SO ID</span>
+            <span style="width: 10%;">Doc Dt.</span>
+            <span style="width: 20%;">Customer</span>
+            <span style="width: 8%;">Priority</span>
+            <span style="width: 40%;">Delivery Date</span>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <span style="width: 15%;"></span>
+            <span style="width: 10%;">Item Code</span>
+            <span style="width: 20%;">Item Name</span>
+            <span style="width: 9%;">Priority</span>
+            <span style="width: 9%;">Del. Date</span>
+            <span style="width: 9%;">Qty.</span>
+            <span style="width: 9%;">UOM</span>
+            <span style="width: 9%;">Rate</span>
+            <span style="width: 8%;">Lead Days</span>
+        </div>
+    </div>
+    {% for so in sales_data %}
+        <div style="width: 100%; height: 8px; border-top: 2px dashed gray; margin-top: 8px;"></div>
+        <div class="container">
+            <div class="row" style="margin-bottom: 8px;">
+                <span style="width: 18%;">{{ so.items }}</span>
+                <span style="width: 10%;">{{ so.transaction_date }}</span>
+                <span style="width: 20%;">{{ so.customer }}</span>
+                <span style="width: 8%;">{{ so.custom_priority }}</span>
+                <span style="width: 40%;">{{ so.delivery_date }}</span>
+            </div>
+        </div>
+        {% for soItem in so.items %}
+            <div class="container">
+                <!-- <div class="row">
+                    <span style="width: 15%;"></span>
+                    <span style="width: 10%;">{{ soItem.item_code }}</span>
+                    <span style="width: 20%;">{{ soItem.item_name }}</span>
+                    <span style="width: 9%;">{{ soItem.custom_priority }}</span>
+                    <span style="width: 9%;">{{ soItem.delivery_date }}</span>
+                    <span style="width: 9%;">{{ soItem.qty }}</span>
+                    <span style="width: 9%;">{{ soItem.uom }}</span>
+                    <span style="width: 9%;">{{ soItem.rate }}</span>
+                    <span style="width: 8%;">{{ soItem.lead_days or '' }}</span>
+                </div> -->
+            </div>
+        {% endfor %}
+    {% endfor %}
+    <div style="width: 100%; height: 8px; border-top: 2px dashed gray; margin-top: 8px;"></div>
+</div>
