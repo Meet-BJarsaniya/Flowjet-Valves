@@ -18,17 +18,54 @@ frappe.ui.form.on('Purchase Order', {
     refresh(frm) {
         if (frm.doc.docstatus == 1) {
             if (frm.doc.custom_mold_items?.length > 0) {
-                frm.add_custom_button('Mold Stock Entry', () => {
-                    frappe.call({
-                        method: 'flowjet_valves.public.py.purchase_order.make_mold_stock_entry',
-                        args: { po_name: frm.doc.name },
-                        callback: function(r) {
-                            if (r.message) {
-                                frappe.set_route('Form', 'Stock Entry', r.message);
-                            }
+                // Check if any Stock Entry exists for this PO (custom linkage)
+                frappe.call({
+                    method: 'frappe.client.get_list',
+                    args: {
+                        doctype: 'Stock Entry',
+                        filters: {
+                            // purpose: 'Send to Subcontractor',  // or relevant purpose
+                            docstatus: ['!=', 2],
+                            purchase_order: frm.doc.name       // adjust if you store PO in another field
+                        },
+                        limit_page_length: 1
+                    },
+                    callback: function(res) {
+                        if ((res.message || []).length === 0) {
+                            // Only add button if no SE exists
+                            frm.add_custom_button('Mold Stock Entry', () => {
+                                frappe.prompt([
+                                    {
+                                        label: 'Qty To Send',
+                                        fieldname: 'qty',
+                                        fieldtype: 'Float',
+                                        reqd: 1,
+                                        default: 1,
+                                        // description: 'Total Qty: ' + frm.doc.qty,
+                                    },
+                                ], function(values) {
+                                    // if (values.custom_work_type === 'Brought Out' && (!values.custom_qty_to_buy || 0 > values.custom_qty_to_buy || values.custom_qty_to_buy > frm.doc.qty)) {
+                                    //     frappe.msgprint(__('Please enter a valid quantity'));
+                                    //     return;
+                                    // }
+                                    // frm.set_value('custom_qty_to_buy', values.custom_qty_to_buy);
+                                    // frm.set_value('custom_total_wo_qty', frm.doc.qty);
+                                    // frm.set_value('qty', frm.doc.custom_total_wo_qty - frm.doc.custom_qty_to_buy);
+                                    // frm.save();
+                                    frappe.call({
+                                        method: 'flowjet_valves.public.py.purchase_order.make_mold_stock_entry',
+                                        args: { po_name: frm.doc.name, qty: values.qty },
+                                        callback: function(r) {
+                                            if (r.message) {
+                                                frappe.set_route('Form', 'Stock Entry', r.message);
+                                            }
+                                        }
+                                    });
+                                }, 'Set Mold Qty', 'Set');
+                            }, 'Make');
                         }
-                    });
-                }, 'Make');
+                    }
+                });
             }
             let items_data = [];
 
