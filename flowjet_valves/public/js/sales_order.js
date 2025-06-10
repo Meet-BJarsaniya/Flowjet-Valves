@@ -12,32 +12,17 @@ frappe.ui.form.on('Sales Order', {
         if (frm.doc.docstatus == 1) updateManufactureCycle(frm);
     },
     refresh(frm) {
-        if (!frm.doc.selling_price_list) return;
+        // if (!frm.doc.selling_price_list) return;
 
         frm.doc.items.forEach(row => {
             if (!row.item_code) return;
 
-            frappe.call({
-                method: "frappe.client.get_value",
-                args: {
-                    doctype: "Item Price",
-                    filters: {
-                        item_code: row.item_code,
-                        price_list: frm.doc.selling_price_list
-                    },
-                    fieldname: "price_list_rate"
-                },
-                callback: function (r) {
-                    if (!r.message) return;
-
-                    let price_list_rate = r.message.price_list_rate;
+                    let price_list_rate = row.price_list_rate;
                     if (flt(row.rate) !== flt(price_list_rate)) {
                         $(`[data-idx="${row.idx}"] [data-fieldname="rate"]`).css("color", "red");
                     } else {
                         $(`[data-idx="${row.idx}"] [data-fieldname="rate"]`).css("color", "");
                     }
-                }
-            });
         });
         if (frm.doc.docstatus == 1) frm.add_custom_button(__('Dispatch Allocation'), function() {
             frappe.call({
@@ -242,22 +227,22 @@ frappe.ui.form.on('Sales Order', {
 frappe.ui.form.on('Sales Order Item', {
     rate(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        if (!row.item_code || !frm.doc.selling_price_list) return;
+        // if (!row.item_code || !frm.doc.selling_price_list) return;
 
-        frappe.call({
-            method: "frappe.client.get_value",
-            args: {
-                doctype: "Item Price",
-                filters: {
-                    item_code: row.item_code,
-                    price_list: frm.doc.selling_price_list
-                },
-                fieldname: "price_list_rate"
-            },
-            callback: function (r) {
-                if (!r.message) return;
+        // frappe.call({
+        //     method: "frappe.client.get_value",
+        //     args: {
+        //         doctype: "Item Price",
+        //         filters: {
+        //             item_code: row.item_code,
+        //             price_list: frm.doc.selling_price_list
+        //         },
+        //         fieldname: "price_list_rate"
+        //     },
+        //     callback: function (r) {
+        //         if (!r.message) return;
 
-                let price_list_rate = r.message.price_list_rate;
+                let price_list_rate = row.price_list_rate;
                 // Compare the rate
                 if (price_list_rate && (flt(row.rate) !== flt(price_list_rate))) {
                     // Apply red style to the 'rate' field
@@ -266,8 +251,8 @@ frappe.ui.form.on('Sales Order Item', {
                     // Reset color if it's the same
                     $(`[data-idx="${row.idx}"] [data-fieldname="rate"]`).css("color", "");
                 }
-            }
-        });
+            // }
+        // });
     }
 });
 
