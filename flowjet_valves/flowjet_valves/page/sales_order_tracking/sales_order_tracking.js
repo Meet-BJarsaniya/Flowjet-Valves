@@ -12,7 +12,7 @@ frappe.pages['sales-order-tracking'].on_page_load = function(wrapper) {
 		args: {
 			doctype: "Sales Order",
 			filters: {
-				// docstatus: 0
+				docstatus: 0,
 			},
 			fields: ["name"],
 		},
