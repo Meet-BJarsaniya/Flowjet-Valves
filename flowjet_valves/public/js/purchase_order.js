@@ -34,16 +34,16 @@ frappe.ui.form.on('Purchase Order', {
                         if ((res.message || []).length === 0) {
                             // Only add button if no SE exists
                             frm.add_custom_button('Mold Stock Entry', () => {
-                                frappe.prompt([
-                                    {
-                                        label: 'Qty To Send',
-                                        fieldname: 'qty',
-                                        fieldtype: 'Float',
-                                        reqd: 1,
-                                        default: 1,
-                                        // description: 'Total Qty: ' + frm.doc.qty,
-                                    },
-                                ], function(values) {
+                            //     frappe.prompt([
+                            //         {
+                            //             label: 'Qty To Send',
+                            //             fieldname: 'qty',
+                            //             fieldtype: 'Float',
+                            //             reqd: 1,
+                            //             default: 1,
+                            //             // description: 'Total Qty: ' + frm.doc.qty,
+                            //         },
+                            //     ], function(values) {
                                     // if (values.custom_work_type === 'Brought Out' && (!values.custom_qty_to_buy || 0 > values.custom_qty_to_buy || values.custom_qty_to_buy > frm.doc.qty)) {
                                     //     frappe.msgprint(__('Please enter a valid quantity'));
                                     //     return;
@@ -54,14 +54,14 @@ frappe.ui.form.on('Purchase Order', {
                                     // frm.save();
                                     frappe.call({
                                         method: 'flowjet_valves.public.py.purchase_order.make_mold_stock_entry',
-                                        args: { po_name: frm.doc.name, qty: values.qty },
+                                        args: { po_name: frm.doc.name, qty: 1},
                                         callback: function(r) {
                                             if (r.message) {
                                                 frappe.set_route('Form', 'Stock Entry', r.message);
                                             }
                                         }
                                     });
-                                }, 'Set Mold Qty', 'Set');
+                                // }, 'Set Mold Qty', 'Set');
                             }, 'Make');
                         }
                     }
