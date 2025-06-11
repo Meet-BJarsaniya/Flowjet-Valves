@@ -107,9 +107,6 @@ frappe.pages['sales-order-tracking'].on_page_load = function(wrapper) {
 									};
 
 									doc.items.forEach(item => {
-										// If priority filter is set, skip items that don't match
-										if (filters.priority && item.custom_priority !== filters.priority) return;
-
 										so_entry.items.push({
 											item_code: item.item_code,
 											item_name: item.item_name,
