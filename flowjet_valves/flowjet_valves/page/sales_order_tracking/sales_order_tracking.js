@@ -21,9 +21,9 @@ frappe.pages['sales-order-tracking'].on_page_load = function(wrapper) {
         },
         {
             label: 'Priority',
-            fieldtype: 'Date',
-            fieldname: 'from',
-            default: frappe.datetime.nowdate() // Default to current date
+            fieldtype: 'Select',
+            fieldname: 'priority',
+            options: ['Urgent', 'High', 'Medium', 'Low'],
         },
     ];
 
@@ -46,10 +46,17 @@ frappe.pages['sales-order-tracking'].on_page_load = function(wrapper) {
                 fetch_and_render_data(filter_values['from'], filter_values['to']);
             }
         });
+        // Listen for blur changes in the filter values
+        filterField.$input.on('blur', function() {
+            filter_values[field.fieldname] = filterField.get_value();
+            if (filter_values['priority']) {
+                fetch_and_render_data(filter_values['priority']);
+            }
+        });
     });
 
     // Function to fetch and render data based on the filters
-    function fetch_and_render_data(from_date, to_date) {
+    // function fetch_and_render_data(from_date, to_date) {
 	let sales_data = [];
 
 	frappe.call({
