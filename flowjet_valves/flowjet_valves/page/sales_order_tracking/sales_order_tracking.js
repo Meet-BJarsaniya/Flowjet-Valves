@@ -138,9 +138,9 @@ frappe.pages['sales-order-tracking'].on_page_load = function(wrapper) {
 		container.innerHTML = ''; // clear previous data
 
 		let html = `
-			<div class="container" style="font-weight: bold;">
+			<div class="container">
 				<div style="width: 100%; height: 8px; border-top: 2px dashed gray; margin-top: 8px;"></div>
-				<div class="container">
+				<div class="container" style="font-weight: bold;">
 					<div class="row" style="margin-bottom: 8px;">
 						<span style="width: 18%;">Draft SO ID</span>
 						<span style="width: 10%;">Doc Dt.</span>
