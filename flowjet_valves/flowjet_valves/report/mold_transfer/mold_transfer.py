@@ -29,7 +29,7 @@ def execute(filters=None):
 		FROM `tabStock Entry` AS SE
 		JOIN `tabStock Entry Detail` AS SEI ON SE.name = SEI.parent
 		JOIN `tabItem` AS I ON I.name = SEI.item_code AND I.custom_is_mold = 1
-		JOIN `tabPurchase Order` AS PO ON PO.name = SE.purchase_order
+		Left JOIN `tabPurchase Order` AS PO ON PO.name = SE.purchase_order
 		WHERE SE.docstatus = 1
 		"""
 
