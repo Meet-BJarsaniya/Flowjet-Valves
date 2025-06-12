@@ -83,6 +83,7 @@ def make_mold_stock_entry(po_name, qty):
         se.append("items", {
             "item_code": mold.item_code,
             "item_name": mold.item_name,
+            "custom_remarks": mold.remarks,
             "qty": qty,
             "s_warehouse": mold.source_warehouse,
             "t_warehouse": supplier_warehouse,
