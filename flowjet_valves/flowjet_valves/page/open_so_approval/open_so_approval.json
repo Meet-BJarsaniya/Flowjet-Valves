@@ -4,16 +4,16 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2025-06-10 12:18:30.324078",
+ "modified": "2025-06-12 10:37:53.128651",
  "modified_by": "Administrator",
  "module": "Flowjet Valves",
- "name": "sales-order-tracking",
+ "name": "open-so-approval",
  "owner": "Administrator",
- "page_name": "sales-order-tracking",
+ "page_name": "open-so-approval",
  "roles": [],
  "script": null,
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Sales Order Tracking"
+ "title": "Open SO Approval"
 }

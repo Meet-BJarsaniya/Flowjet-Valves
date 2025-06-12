@@ -1,7 +1,7 @@
-frappe.pages['sales-order-tracking'].on_page_load = function(wrapper) {
+frappe.pages['open-so-approval'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: 'Sales Order Tracking',
+		title: 'Open SO Approval',
 		single_column: true
 	});
 
